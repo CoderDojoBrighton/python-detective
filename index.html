@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Python Detective</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
+</head>
+<body>
+
+<header>
+    <a class="logo" href="#/">PYTHON DETECTIVE</a>
+
+    <!-- Shown on the case board -->
+    <div class="hdr-group" id="hdr-board">
+        <span class="hdr-spacer"></span>
+        <span class="hdr-stat">Rank: <b id="hdr-rank">Rookie Coder</b></span>
+        <span class="hdr-stat"><b id="hdr-xp">0</b> XP</span>
+    </div>
+
+    <!-- Shown inside a case -->
+    <div class="hdr-group" id="hdr-case" hidden>
+        <a class="hdr-btn" href="#/">← Cases</a>
+        <span id="hdr-badge" class="badge"></span>
+        <span class="case-name" id="hdr-case-name"></span>
+        <div class="progress">
+            <span>Progress</span>
+            <div class="bar"><div id="prog-fill"></div></div>
+            <span id="prog-count">0/0</span>
+        </div>
+        <button class="hdr-btn hdr-hide-sm" id="font-dec" title="Smaller code text">A−</button>
+        <button class="hdr-btn hdr-hide-sm" id="font-inc" title="Bigger code text">A+</button>
+        <button class="hdr-btn" id="restart" title="Start this case again">↻ Restart</button>
+    </div>
+</header>
+
+<!-- ======================= CASE BOARD ======================= -->
+<main id="board-view">
+    <div class="board">
+        <section class="hero">
+            <h1>PYTHON DETECTIVE<span class="cursor">&nbsp;</span></h1>
+            <p>A mysterious thief called <b>The Magpie</b> is loose in Brighton. Write <b>real Python code</b> to read files, crack codes and follow the clues, one case at a time.</p>
+        </section>
+
+        <div class="player">
+            <div class="rank"><b id="board-rank">Rookie Coder</b>YOUR RANK</div>
+            <div><b id="board-xp">0</b>XP EARNED</div>
+            <div><b id="board-solved">0/0</b>CASES SOLVED</div>
+        </div>
+
+        <div class="how">
+            <div><span>📁</span><b>1. Pick a case</b>Start with case 1. Solving a case unlocks the next one.</div>
+            <div><span>🐍</span><b>2. Write Python</b>Type code in the editor and press <code>▶ Run</code> to dig through files and decode secrets.</div>
+            <div><span>🏆</span><b>3. Close the case</b>Record the evidence you find to earn XP. Fewer hints means more XP!</div>
+        </div>
+
+        <div id="tiers"></div>
+
+        <div class="board-foot">
+            Made for CoderDojo Brighton · All people, places and plots are made up.<br>
+            <button class="link-btn" id="teacher-toggle"></button> ·
+            <button class="link-btn" id="reset-progress">Reset my progress</button>
+        </div>
+    </div>
+</main>
+
+<!-- ======================= CASE VIEW ======================= -->
+<main id="case-view" hidden>
+    <section id="work">
+        <div id="task-bar" aria-live="polite"></div>
+        <div class="term-window editor-window">
+            <div class="term-titlebar">
+                <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+                <span class="tb-title">detective.py</span>
+                <span id="run-hint" class="enter-badge">Press ▶ Run</span>
+                <button class="tb-btn" id="reset-code" title="Go back to the starting code">↺ Reset code</button>
+                <button class="tb-btn stop" id="stop-btn" title="Stop your code" disabled>■ Stop</button>
+                <button class="tb-btn run" id="run-btn" title="Run your code (Ctrl+Enter)" disabled>⏳ Python loading…</button>
+            </div>
+            <div id="editor"></div>
+        </div>
+        <div class="term-window console-window">
+            <div class="term-titlebar">
+                <span class="tb-title">Output</span>
+                <button class="tb-btn" id="clear-btn" title="Clear the output">🧹 Clear</button>
+            </div>
+            <div id="terminal"></div>
+        </div>
+        <div class="keys">
+            <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> run</span>
+            <span><kbd>Tab</kbd> indent</span>
+            <span><kbd>Ctrl</kbd>+<kbd>/</kbd> comment out a line</span>
+            <span><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo</span>
+            <span>Stuck? press 💡 Need a hint?</span>
+        </div>
+    </section>
+
+    <aside>
+        <nav class="tabs" role="tablist">
+            <button class="tab active" role="tab" data-tab="mission">🎯 Objectives</button>
+            <button class="tab" role="tab" data-tab="commands">📖 Python</button>
+            <button class="tab" role="tab" data-tab="bonus" id="tab-bonus">🏆 Bonus</button>
+        </nav>
+
+        <div class="tab-body">
+            <section data-panel="mission">
+                <ol class="steps" id="steps"></ol>
+                <div id="mission"></div>
+                <div id="found"></div>
+                <div id="learned"></div>
+                <details class="card briefing" id="briefing-card" open>
+                    <summary>📁 Case briefing</summary>
+                    <div class="briefing-text" id="briefing-text"></div>
+                </details>
+            </section>
+
+            <section data-panel="commands" hidden>
+                <div id="cheats"></div>
+            </section>
+
+            <section data-panel="bonus" hidden>
+                <p class="small" style="margin-top:0">Extra challenges for super-sleuths.</p>
+                <div id="bonus"></div>
+            </section>
+        </div>
+    </aside>
+</main>
+
+<div id="toasts"></div>
+
+<div class="modal" id="briefing">
+    <div class="modal-card briefing-card">
+        <div class="eyebrow">📁 CASE BRIEFING</div>
+        <h2 id="briefing-title"></h2>
+        <div class="briefing-text" id="briefing-body"></div>
+        <button class="primary" id="briefing-go">🔍 Start investigating</button>
+    </div>
+</div>
+
+<div class="modal" id="modal">
+    <div class="modal-card">
+        <div class="big">🕵️</div>
+        <h2>CASE CLOSED!</h2>
+        <div class="xp-gain" id="modal-xp"></div>
+        <p id="modal-rank" style="font-size:14px"></p>
+        <div class="stats" id="modal-stats"></div>
+        <p class="small" id="modal-note"></p>
+        <a class="primary" href="#/" id="modal-board" style="display:block;text-decoration:none">Back to the case board</a>
+        <button class="secondary" id="modal-close">Keep working on this case</button>
+    </div>
+</div>
+
+<!-- Cases: each file adds one case to CASES. To add a new case, copy one and add a <script> line here. -->
+<script>const CASES = [];</script>
+<script src="checks.js"></script>
+<script src="cases/01-first-contact.js"></script>
+<script src="cases/02-locker-code.js"></script>
+<script src="cases/03-roll-call.js"></script>
+<script src="cases/04-case-file.js"></script>
+<script src="cases/05-log-detective.js"></script>
+<script src="cases/06-lost-and-found.js"></script>
+<script src="cases/07-backwards-day.js"></script>
+<script src="cases/08-caesars-return.js"></script>
+<script src="cases/09-base64-bandits.js"></script>
+<script src="cases/10-lock-it-down.js"></script>
+<script src="py-worker.js"></script>
+<script src="engine.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "python-detective-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node run-cases.mjs"
+  },
+  "devDependencies": {
+    "pyodide": "0.26.4"
+  }
+}
