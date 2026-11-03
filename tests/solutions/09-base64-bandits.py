@@ -7,29 +7,29 @@
 # ---- run
 import base64
 
-with open("boathouse/note.b64") as f:
-    text = f.read()
+with open("boathouse/note.b64") as file:
+    text = file.read()
 print(base64.b64decode(text).decode())
 
 # ---- run
-with open("boathouse/door.bin") as f:
-    groups = f.read().split()
+with open("boathouse/door.bin") as file:
+    groups = file.read().split()
 
 message = ""
-for g in groups:
-    message += chr(int(g, 2))
+for group in groups:
+    message += chr(int(group, 2))
 print(message)
 
 # ---- run
-with open("boathouse/receipt.hex") as f:
-    text = f.read().strip()
+with open("boathouse/receipt.hex") as file:
+    text = file.read().strip()
 print(bytes.fromhex(text).decode())
 
 # ---- run
 import base64
 
-with open("boathouse/onion.txt") as f:
-    text = f.read().strip()
+with open("boathouse/onion.txt") as file:
+    text = file.read().strip()
 
 layers = 0
 while not text.startswith("FLAG{"):

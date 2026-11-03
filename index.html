@@ -15,16 +15,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/runmode/runmode.min.js"></script>
 </head>
 <body>
 
 <header>
     <a class="logo" href="#/">PYTHON DETECTIVE</a>
 
-    <!-- Shown on the case board -->
-    <div class="hdr-group" id="hdr-board">
+    <!-- Shown on the case board. The board and a case both start hidden: route() shows the
+         right one, so refreshing a case doesn't flash the board first -->
+    <div class="hdr-group" id="hdr-board" hidden>
         <span class="hdr-spacer"></span>
         <span class="hdr-stat">Rank: <b id="hdr-rank">Rookie Coder</b></span>
         <span class="hdr-stat"><b id="hdr-xp">0</b> XP</span>
@@ -42,12 +43,13 @@
         </div>
         <button class="hdr-btn hdr-hide-sm" id="font-dec" title="Smaller code text">A−</button>
         <button class="hdr-btn hdr-hide-sm" id="font-inc" title="Bigger code text">A+</button>
+        <button class="hdr-btn" id="tour-btn" title="Show me around the screen again">❓ Tour</button>
         <button class="hdr-btn" id="restart" title="Start this case again">↻ Restart</button>
     </div>
 </header>
 
 <!-- ======================= CASE BOARD ======================= -->
-<main id="board-view">
+<main id="board-view" hidden>
     <div class="board">
         <section class="hero">
             <h1>PYTHON DETECTIVE<span class="cursor">&nbsp;</span></h1>
@@ -79,7 +81,6 @@
 <!-- ======================= CASE VIEW ======================= -->
 <main id="case-view" hidden>
     <section id="work">
-        <div id="task-bar" aria-live="polite"></div>
         <div class="term-window editor-window">
             <div class="term-titlebar">
                 <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
@@ -94,6 +95,12 @@
         <div class="term-window console-window">
             <div class="term-titlebar">
                 <span class="tb-title">Output</span>
+                <span class="out-key" id="out-key" title="What the colours in the output mean">
+                    <span class="k-out">■ your code printed</span>
+                    <span class="k-game">■ Detective HQ</span>
+                    <span class="k-tip">■ tips</span>
+                    <span class="k-err">■ errors</span>
+                </span>
                 <button class="tb-btn" id="clear-btn" title="Clear the output">🧹 Clear</button>
             </div>
             <div id="terminal"></div>
@@ -140,6 +147,21 @@
 
 <div id="toasts"></div>
 
+<!-- First-time tour: a spotlight on one part of the screen, with a card explaining it -->
+<div id="tour" hidden>
+    <div class="tour-spot" id="tour-spot"></div>
+    <div class="tour-card" id="tour-card" role="dialog" aria-live="polite">
+        <div class="eyebrow" id="tour-step"></div>
+        <h3 id="tour-title"></h3>
+        <div id="tour-body"></div>
+        <div class="tour-btns">
+            <button class="secondary" id="tour-skip">Skip tour</button>
+            <button class="secondary" id="tour-back">← Back</button>
+            <button class="primary" id="tour-next">Next →</button>
+        </div>
+    </div>
+</div>
+
 <div class="modal" id="briefing">
     <div class="modal-card briefing-card">
         <div class="eyebrow">📁 CASE BRIEFING</div>
@@ -165,6 +187,7 @@
 <!-- Cases: each file adds one case to CASES. To add a new case, copy one and add a <script> line here. -->
 <script>const CASES = [];</script>
 <script src="checks.js"></script>
+<script src="explain.js"></script>
 <script src="cases/01-first-contact.js"></script>
 <script src="cases/02-locker-code.js"></script>
 <script src="cases/03-roll-call.js"></script>

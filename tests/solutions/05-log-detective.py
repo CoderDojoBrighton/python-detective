@@ -4,53 +4,53 @@
 # answer hour: 09
 
 # ---- run
-with open("case_file.txt") as f:
-    print(f.read())
+with open("case_file.txt") as file:
+    print(file.read())
 
 # ---- run
-with open("pavilion/doors.log") as f:
-    lines = f.readlines()
+with open("pavilion/doors.log") as file:
+    lines = file.readlines()
 
 for line in lines[:5]:
     print(line.strip())
 
 # ---- run
-with open("pavilion/doors.log") as f:
-    lines = f.readlines()
+with open("pavilion/doors.log") as file:
+    lines = file.readlines()
 
 for line in lines:
     if "DENIED" in line:
         print(line.strip())
 
 # ---- run
-with open("pavilion/doors.log") as f:
-    lines = f.readlines()
+with open("pavilion/doors.log") as file:
+    lines = file.readlines()
 
-counts = {}
+refusals = {}
 for line in lines:
     if "DENIED" in line:
-        parts = line.split()
-        badge = parts[-2].split("=")[1]
-        counts[badge] = counts.get(badge, 0) + 1
+        words = line.split()
+        badge = words[-2].split("=")[1]
+        refusals[badge] = refusals.get(badge, 0) + 1
 
-print(counts)
-print("Most refused:", max(counts, key=counts.get))
+print(refusals)
+print("Most refused:", max(refusals, key=refusals.get))
 
 # ---- run
-with open("pavilion/doors.log") as f:
-    lines = f.readlines()
+with open("pavilion/doors.log") as file:
+    lines = file.readlines()
 
 for line in lines:
     if "B-7731" in line and "GRANTED" in line:
         print(line.strip())
 
 # ---- run
-with open("pavilion/doors.log") as f:
-    lines = f.readlines()
+with open("pavilion/doors.log") as file:
+    lines = file.readlines()
 
-hours = {}
+swipes_per_hour = {}
 for line in lines:
     hour = line.split()[1][:2]
-    hours[hour] = hours.get(hour, 0) + 1
-print(hours)
-print(max(hours, key=hours.get))
+    swipes_per_hour[hour] = swipes_per_hour.get(hour, 0) + 1
+print(swipes_per_hour)
+print(max(swipes_per_hour, key=swipes_per_hour.get))

@@ -17,25 +17,26 @@ for folder, subfolders, files in os.walk("/evidence/laptop"):
     if "plans.txt" in files:
         path = os.path.join(folder, "plans.txt")
         print(path)
-        with open(path) as f:
-            print(f.read())
+        with open(path) as file:
+            print(file.read())
 
 # ---- run
 import os
-count = 0
+photo_count = 0
 for folder, subfolders, files in os.walk("/evidence/laptop"):
     for name in files:
         if name.endswith(".jpg"):
-            count = count + 1
-print(count)
+            photo_count = photo_count + 1
+print(photo_count)
 
 # ---- run
 import os
-biggest = ""
+biggest_file = ""
 biggest_size = 0
 for folder, subfolders, files in os.walk("/evidence/laptop"):
     for name in files:
         size = os.path.getsize(os.path.join(folder, name))
         if size > biggest_size:
-            biggest, biggest_size = name, size
-print(biggest, biggest_size)
+            biggest_file = name
+            biggest_size = size
+print(biggest_file, biggest_size)

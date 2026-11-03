@@ -22,10 +22,15 @@ It's a static site with no build step and no server code.
 | `engine.js` | Case board, editor and console, missions, hints, evidence, XP |
 | `py-worker.js` | Runs Python in a Web Worker. It writes the case's files into Python's filesystem, runs the student's code, and reports what the code opened, listed and wrote |
 | `checks.js` | Small helpers that cases use to decide whether a mission is done |
+| `explain.js` | The 📖 Python reference, and the "What does each line do?" explanations under every clickable code snippet |
 | `cases/NN-name.js` | One case each |
 | `tests/` | Teacher solutions and a checker that runs them |
 
 **Stopping code.** Python runs in a worker, so a never-ending loop can't freeze the page. **■ Stop**, or a 15-second timeout, throws the worker away and starts a fresh one in about a second.
+
+**First-time tour.** The first time someone opens a case, a short tour lights up each part of the screen in turn. **❓ Tour** in the header replays it, and "Reset my progress" shows it again.
+
+**Colours mean one thing each.** In the output panel: white is what the student's code printed, green is the game talking, purple is a tip, red is an error. Yellow is kept for "text in quotes" in the editor, and code in the side panel is coloured exactly like the editor.
 
 **Turned off on purpose.** `input()` is switched off (cases put values in variables instead).
 
@@ -47,7 +52,10 @@ It's a static site with no build step and no server code.
    - The next objective unlocks once they're answered correctly.
    - Bonus questions can be skipped.
    - The final mission (`final: true`) asks for any main answers still missing.
-7. Write a teacher solution in `tests/solutions/<same name>.py` and run the checker (below).
+7. Every clickable snippet (`try`, `data`, bonus `code`) shows a numbered explanation of each line. `explain.js` covers simple lines (prints, variables, loops, if...). For anything else, add it to the case's `explain: { 'the exact line': 'what it does' }`. The checker fails if any snippet line has no explanation.
+   - Use variable names that say what's inside (`scrap1`, not `part1`; `file`, not `f`).
+   - To make the student **type** the code rather than click it, give the mission `typeIt: 'code'`. It appears as grey ghost code in the editor for them to type over. Put a part they should change in `⟨…⟩`, e.g. `codename = "⟨Agent Sparrow⟩"`. If the mission also has `data`, that's added to their code for them first. Case 1 uses this throughout.
+8. Write a teacher solution in `tests/solutions/<same name>.py` and run the checker (below).
 
 ## Checking the cases
 

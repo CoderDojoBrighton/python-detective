@@ -4,28 +4,28 @@
 # answer boat: KIPPER
 
 # ---- run
-with open("messages/msg1.txt") as f:
-    text = f.read().strip()
-print(text[::-1])
+with open("messages/msg1.txt") as file:
+    message = file.read().strip()
+print(message[::-1])
 
 # ---- run
-with open("messages/msg2.txt") as f:
-    text = f.read().strip()
-print(text[::2])
+with open("messages/msg2.txt") as file:
+    message = file.read().strip()
+print(message[::2])
 
 # ---- run
-letters = []
-with open("messages/poem.txt") as f:
-    for line in f:
-        letters.append(line.strip()[0])
-print("".join(letters))
+first_letters = []
+with open("messages/poem.txt") as file:
+    for line in file:
+        first_letters.append(line.strip()[0])
+print("".join(first_letters))
 
 # ---- run
-with open("messages/msg3.txt") as f:
-    text = f.read()
+with open("messages/msg3.txt") as file:
+    message = file.read()
 
-secret = ""
-for ch in text:
-    if ch.isupper():
-        secret += ch
-print(secret)
+capitals = ""
+for letter in message:
+    if letter.isupper():
+        capitals += letter
+print(capitals)

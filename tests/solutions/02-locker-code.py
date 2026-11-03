@@ -4,25 +4,25 @@
 # answer receipt: 495
 
 # ---- run
-d1 = 3600 // 900
-print(d1)
+digit1 = 3600 // 900
+print(digit1)
 
 # ---- run
-d1 = 3600 // 900
-d2 = 2026 % 7
-d3 = (15 + 27) * 2 - 77
-d4 = 2 ** 3
-print(d2, d3, d4)
+digit1 = 3600 // 900
+digit2 = 2026 % 7
+digit3 = (15 + 27) * 2 - 77
+digit4 = 2 ** 3
+print(digit2, digit3, digit4)
 
-code = str(d1) + str(d2) + str(d3) + str(d4)
-print(code)
+combination = str(digit1) + str(digit2) + str(digit3) + str(digit4)
+print(combination)
 
-if int(code) > 5000:
+if int(combination) > 5000:
     print("ALARM")
 else:
     print("SAFE")
 
-number = int(code)
+number = int(combination)
 bus = number // 100 + number % 100
 print("Bus number:", bus)
 

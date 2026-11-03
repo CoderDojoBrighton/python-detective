@@ -12,42 +12,46 @@ print(hashlib.sha256("seagull".encode()).hexdigest())
 # ---- run
 import hashlib
 
-with open("nest/password.sha256") as f:
-    target = f.read().strip()
+with open("nest/password.sha256") as file:
+    password_hash = file.read().strip()
 
-with open("nest/wordlist.txt") as f:
-    for word in f:
+with open("nest/wordlist.txt") as file:
+    for word in file:
         word = word.strip()
-        if hashlib.sha256(word.encode()).hexdigest() == target:
+        if hashlib.sha256(word.encode()).hexdigest() == password_hash:
             print("Password found:", word)
 
 # ---- run
-with open("nest/vault.hex") as f:
-    data = bytes.fromhex(f.read().strip())
+with open("nest/vault.hex") as file:
+    vault_bytes = bytes.fromhex(file.read().strip())
 
 message = ""
-for b in data:
-    message += chr(b ^ 42)
+for byte in vault_bytes:
+    message += chr(byte ^ 42)
 print(message)
 
 # ---- run
 def encrypt(text):
-    out = ""
-    for ch in text:
-        if ch.isupper():
-            out += chr((ord(ch) - 65 + 7) % 26 + 65)
-        elif ch.islower():
-            out += chr((ord(ch) - 97 + 7) % 26 + 97)
+    secret = ""
+    for character in text:
+        if character.isupper():
+            secret += chr((ord(character) - 65 + 7) % 26 + 65)
+        elif character.islower():
+            secret += chr((ord(character) - 97 + 7) % 26 + 97)
         else:
-            out += ch
-    return out
+            secret += character
+    return secret
 
 report = "The Magpie is Margot Pye. The Golden Deckchair is under the Palace Pier."
-with open("report.txt", "w") as f:
-    f.write(encrypt(report))
+with open("report.txt", "w") as file:
+    file.write(encrypt(report))
 print(encrypt(report))
 
 # Bonus
-with open("nest/wordlist.txt") as f:
-    words = [w.strip() for w in f]
-print(len([w for w in words if len(w) > 8]))
+long_words = 0
+with open("nest/wordlist.txt") as file:
+    for word in file:
+        word = word.strip()
+        if len(word) > 8:
+            long_words += 1
+print(long_words)

@@ -7,16 +7,20 @@
 print("Detective reporting for duty!")
 
 # ---- run
-codename = "Agent Sparrow"
-print(codename)
-print(f"Welcome to the Bureau, {codename}!")
+print("Detective reporting for duty!")
+print("I am the best detective in Brighton!")
 
 # ---- run
-part1 = "Catch me if you can, Detective! "
-part2 = "My next prize is waiting by the "
-part3 = "Bandstand. Caw caw! - The Magpie"
+codename = "Agent Sparrow"
+print(codename)
 
-message = part1 + part2 + part3
+# ---- run
+scrap1 = "Catch me if you can, Detective! "
+scrap2 = "My next prize is waiting by the "
+scrap3 = "Bandstand. Caw caw! - The Magpie"
+
+message = scrap1 + scrap2 + scrap3
 print(message)
-print(len(message))
+length = len(message)
+print(length)
 print(message.count("e"))

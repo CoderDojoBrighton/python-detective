@@ -23,7 +23,7 @@ const filter = args.find(a => !a.startsWith('-'));
 // Load the game's scripts in the same order as index.html
 const ctx = vm.createContext({ console, CASES: [] });
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-let scripts = [...html.matchAll(/<script src="((?:checks|cases\/[^"]+|py-worker)\.js)"><\/script>/g)].map(m => m[1]);
+let scripts = [...html.matchAll(/<script src="((?:checks|explain|cases\/[^"]+|py-worker)\.js)"><\/script>/g)].map(m => m[1]);
 const missing = scripts.filter(s => !fs.existsSync(path.join(root, s)));
 missing.forEach(s => console.log(`✖ index.html loads ${s}, which doesn't exist`));
 scripts = scripts.filter(s => !missing.includes(s));
@@ -38,7 +38,7 @@ const pdRun = vm.runInContext('pdRun', ctx);
 function parseSolution(text) {
     const answers = {}, runs = [];
     let cur = null;
-    for (const line of text.split('\n')) {
+    for (const line of text.split(/\r?\n/)) {      // Windows checkouts may have \r\n line endings
         const a = line.match(/^# answer ([\w-]+):\s*(.*)$/);
         const r = line.match(/^# ---- run(.*)$/);
         if (a && !cur) answers[a[1]] = a[2].trim();
@@ -51,6 +51,15 @@ function parseSolution(text) {
 let failures = missing.length;
 const fail = msg => { failures++; console.log(`  ✖ ${msg}`); };
 
+// Every clickable snippet needs a "What does each line do?" explanation for every line
+const explainSnippet = vm.runInContext('explainSnippet', ctx);
+function checkExplained(code, extra, where) {
+    for (const s of explainSnippet(code, extra))
+        if (!s.html) fail(`${where}: no explanation for line ${s.from}: ${code.split('\n')[s.from - 1].trim()}`);
+}
+console.log('\n📖 Python reference');
+for (const [name, r] of Object.entries(vm.runInContext('PYREF', ctx))) checkExplained(r.ex, null, `reference "${name}"`);
+
 const CASES = vm.runInContext('CASES', ctx);
 for (const [i, c] of CASES.entries()) {
     const file = caseFiles[i];
@@ -59,6 +68,12 @@ for (const [i, c] of CASES.entries()) {
     if (c.requires && !CASES.some(x => x.id === c.requires)) fail(`requires unknown case "${c.requires}"`);
     for (const m of c.missions) for (const id of m.evidence || [])
         if (!c.evidence.some(f => f.id === id)) fail(`mission "${m.id}" asks for unknown evidence "${id}"`);
+    for (const m of c.missions) {
+        for (const code of m.try || []) checkExplained(code, c.explain, `mission "${m.id}"`);
+        if (m.typeIt) checkExplained(m.typeIt.replace(/[⟨⟩]/g, ''), c.explain, `mission "${m.id}" typeIt`);
+        if (m.data) checkExplained(m.data, c.explain, `mission "${m.id}" data`);
+    }
+    for (const b of c.bonus || []) if (b.code) checkExplained(b.code, c.explain, `bonus "${b.title}"`);
 
     const solPath = path.join(here, 'solutions', path.basename(file, '.js') + '.py');
     if (!fs.existsSync(solPath)) { fail(`no solution at ${path.relative(root, solPath)}`); continue; }

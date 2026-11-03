@@ -8,27 +8,27 @@
 print(ord("A"), chr(72))
 
 # ---- run
-def shift(letter, n):
-    return chr((ord(letter) - 65 + n) % 26 + 65)
+def shift_letter(letter, shift):
+    return chr((ord(letter) - 65 + shift) % 26 + 65)
 
-print(shift("A", 3), shift("Z", 1))
+print(shift_letter("A", 3), shift_letter("Z", 1))
 
 # ---- run
-def decode(text, n):
-    out = ""
-    for ch in text:
-        if ch.isalpha():
-            out += chr((ord(ch) - 65 - n) % 26 + 65)
+def decode(text, shift):
+    decoded = ""
+    for character in text:
+        if character.isalpha():
+            decoded += chr((ord(character) - 65 - shift) % 26 + 65)
         else:
-            out += ch
-    return out
+            decoded += character
+    return decoded
 
-with open("notebook/note1.txt") as f:
-    lines = f.readlines()
+with open("notebook/note1.txt") as file:
+    lines = file.readlines()
 print(decode(lines[1], 3))
 
-with open("notebook/note2.txt") as f:
-    text = f.read()
+with open("notebook/note2.txt") as file:
+    text = file.read()
 
 for key in range(26):
     attempt = decode(text, key)
@@ -36,15 +36,15 @@ for key in range(26):
         print(key, attempt)
 
 # Bonus: progressive shift
-with open("notebook/note3.txt") as f:
-    text = f.readlines()[1]
+with open("notebook/note3.txt") as file:
+    text = file.readlines()[1]
 
-count = 0
-out = ""
-for ch in text:
-    if ch.isalpha():
-        count += 1
-        out += chr((ord(ch) - 65 - count) % 26 + 65)
+shift = 0
+decoded = ""
+for character in text:
+    if character.isalpha():
+        shift += 1
+        decoded += chr((ord(character) - 65 - shift) % 26 + 65)
     else:
-        out += ch
-print(out)
+        decoded += character
+print(decoded)

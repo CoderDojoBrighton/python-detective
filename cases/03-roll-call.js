@@ -60,7 +60,9 @@ CASES.push({
     ],
     starter: [
         '# Roll Call',
-        '# A list holds lots of things in [square brackets], separated by commas.',
+        '# A list is one variable that holds lots of things, in order.',
+        '# Put the things inside [square brackets], with commas in between.',
+        '# Press Run to see this list of suspects.',
         '',
         'suspects = ["Ada", "Ben", "Chloe"]',
         'print(suspects)',
@@ -68,23 +70,36 @@ CASES.push({
     ].join('\n'),
     files: {},
 
+    // "What does each line do?" for lines the general explanations don't cover well
+    explain: {
+        'print(len(signed_in))': 'Counts the names in the <code>signed_in</code> list with <code>len()</code>, and shows the number.',
+        'print(len(signed_out))': 'Does the same for <code>signed_out</code>, so you can compare the two numbers.',
+        'print("Still inside:", name)': 'Shows the words <code>Still inside:</code> followed by the name. The comma puts a space between them.',
+        'if badge % 7 == 0:': 'Divides the badge number by 7 and checks whether the remainder is 0. <code>==</code> (two equals signs) asks "are these the same?". The indented line below only runs if the answer is yes.',
+        'print("Lucky badge:", badge)': 'Shows the words <code>Lucky badge:</code> followed by the badge number.',
+        'j_count = 0': 'Makes a variable called <code>j_count</code> to count the J names, starting at 0. We picked a name that says what it counts, but any name would work.',
+        'if name.startswith("J"):': 'Checks whether the name starts with a capital <code>J</code>. <code>.startswith()</code> gives True or False, and the indented line below only runs if it\'s True.',
+        'print(j_count)': 'Shows the final count. It isn\'t indented, so it runs just once, after the loop has finished.',
+        'print(signed_in[-1])': 'Shows the last name in <code>signed_in</code>. Negative numbers count backwards from the end, so <code>-1</code> is the last one.'
+    },
+
     missions: [
         {
             id: 'lists', title: 'Count the visitors', tutorial: true,
-            story: 'Mr Okoro\'s two lists are Python <b>lists</b>: lots of strings inside <code>[square brackets]</code>. First, check they\'re complete. <code>len()</code> works on lists too: it tells you how many items are inside.',
-            task: 'Add the two lists to your code (click the code below), then print how many people are in <code>signed_in</code>.',
+            story: 'Mr Okoro\'s registers have 30 names each. You <i>could</i> make 30 variables, <code>visitor1</code>, <code>visitor2</code> and so on, but that\'s a lot of typing! A <b>list</b> is one variable that holds lots of things, in order. You write it with <code>[square brackets]</code> and put commas between the items: <code>suspects = ["Ada", "Ben", "Chloe"]</code>.<br><br>Mr Okoro\'s lists are called <code>signed_in</code> and <code>signed_out</code>, so their names say what they hold. First, check how many names each one has. You used <code>len()</code> to count the letters in the Magpie\'s note. On a list, it counts the items.',
+            task: 'Click the glowing code below to add the two lists to your code. Then print how many people are in <code>signed_in</code>.',
             tools: ['lists', 'len'],
             hints: [
-                'Click the grey code box below to add both lists to the end of your code.',
+                'Click the glowing code box below. It adds both lists to the end of your code.',
                 '<code>print(len(signed_in))</code>'
             ],
             try: [`${LISTS}\n\nprint(len(signed_in))\nprint(len(signed_out))`],
-            learn: 'A <b>list</b> keeps many values in order. <code>len(signed_in)</code> counts the items, just like it counted the letters in a string.',
+            learn: 'A <b>list</b> keeps many values in order, inside <code>[square brackets]</code>. <code>len(signed_in)</code> counts the items, just like it counted the letters in a string.',
             done: e => uses(e, /len\s*\(\s*signed_in\s*\)/) && printed(e, String(SIGNED_IN.length))
         },
         {
             id: 'loop', title: 'Read out the register', tutorial: true,
-            story: 'One list is longer than the other, so somebody didn\'t sign out! To look at every name, one at a time, use a <b>for loop</b>. It repeats the indented lines once for each item in the list.',
+            story: 'The lists are different lengths, so somebody didn\'t sign out! To check the names, you need to look at them one at a time. A <b>for loop</b> does that for you. It takes the first item in the list and runs some lines of code, then takes the next item and runs them again, all the way to the end.<br><br><code>for name in signed_in:</code> means "for each name in signed_in, do this". Each time round, Python puts the current item in a variable called <code>name</code>. You choose that name: <code>visitor</code> or <code>person</code> would work just as well.<br><br>The lines to repeat go underneath, <b>indented</b> with 4 spaces, just like the lines under an <code>if</code>. Don\'t forget the colon at the end of the <code>for</code> line.',
             task: 'Use a <code>for</code> loop to print every name in <code>signed_in</code>, one per line.',
             tools: ['for'],
             hints: [
@@ -92,36 +107,36 @@ CASES.push({
                 'The next line needs 4 spaces in front: <code>    print(name)</code>'
             ],
             try: ['for name in signed_in:\n    print(name)'],
-            learn: '<code>for name in signed_in:</code> takes each item in turn and puts it in the variable <code>name</code>, then runs the indented lines. You don\'t have to know how long the list is!',
+            learn: '<code>for name in signed_in:</code> takes each item in turn, puts it in the variable <code>name</code>, then runs the indented lines. You don\'t even need to know how long the list is!',
             done: e => uses(e, /for\s+\w+\s+in\s+signed_in/) && printed(e, SIGNED_IN[0], SIGNED_IN[SIGNED_IN.length - 1])
         },
         {
             id: 'missing', title: 'Who never left?',
-            story: 'Now for the real detective work. For each person who signed <b>in</b>, check whether their name is in <code>signed_out</code>. Python has a handy word for that: <code>not in</code>.',
+            story: 'Now for the real detective work. For each person who signed <b>in</b>, check whether their name is missing from <code>signed_out</code>.<br><br><code>in</code> asks "is this somewhere in the list?", and <code>not in</code> asks "is this missing from the list?". Put <code>not in</code> in an <code>if</code>, put the <code>if</code> inside your loop, and Python checks every name for you.',
             task: 'Loop through <code>signed_in</code> and print only the names that are <b>not in</b> <code>signed_out</code>.',
             tools: ['for', 'in', 'if'],
             hints: [
                 'Inside your loop, add an <code>if</code>: <code>if name not in signed_out:</code>',
-                'The print goes one level deeper, with 8 spaces in front, so it only runs when the if is true.'
+                'The print goes one step further in, with 8 spaces in front. That puts it inside the <code>if</code>, so it only runs when the name is missing.'
             ],
             try: ['for name in signed_in:\n    if name not in signed_out:\n        print("Still inside:", name)'],
-            learn: '<code>x in my_list</code> is True if x is somewhere in the list, and <code>not in</code> is the opposite. Put an <code>if</code> inside a <code>for</code> and you can filter a whole list!',
+            learn: '<code>"Ben" in signed_out</code> is True if "Ben" is somewhere in the list, and <code>not in</code> is the opposite. Put an <code>if</code> inside a <code>for</code> and you can filter a whole list!',
             clue: 'That name sounds a bit like "Magpie"... Add it to the Evidence Board →',
             evidence: ['name'],
             done: e => uses(e, /\bnot\s+in\b|\bin\s+signed_out/, /for\s+\w+\s+in/) && printed(e, ALIAS)
         },
         {
             id: 'badge', title: 'Lucky number seven',
-            story: `Mr Okoro remembers something: "That visitor asked for a badge that was a multiple of 7. Said it was lucky!" Here are the numbers of all the badges handed out yesterday. A number is a multiple of 7 when dividing by 7 leaves <b>no remainder</b>, so <code>number % 7 == 0</code>.`,
-            task: 'Add the <code>badges</code> list to your code (click it in the Objectives panel), then loop through it and print the badge number that is a multiple of 7.',
+            story: `Mr Okoro remembers something: "That visitor asked for a badge that was a multiple of 7. Said it was lucky!" Below is a list of every badge number handed out yesterday.<br><br>A number is a multiple of 7 when it divides by 7 with <b>nothing left over</b>. Remember <code>%</code> from the locker? It gives the remainder. So for a multiple of 7, <code>badge % 7</code> is 0.<br><br>To check whether two things are equal, Python uses <b>two</b> equals signs: <code>==</code>. A single <code>=</code> already has a job: putting things in variables. So <code>if badge % 7 == 0:</code> asks "is the remainder 0?".`,
+            task: 'Click the glowing <code>badges</code> list below to add it to your code. Then loop through it and print the badge number that is a multiple of 7.',
             tools: ['for', 'if', 'maths'],
             hints: [
-                'Remember <code>%</code> from the locker? It gives the remainder.',
-                '<code>if badge % 7 == 0:</code> Use two equals signs <code>==</code> to compare (one <code>=</code> is for making variables).'
+                'Loop through the list with <code>for badge in badges:</code>. Each time round, <code>badge</code> holds one number.',
+                '<code>if badge % 7 == 0:</code> goes inside the loop, and the print goes inside the <code>if</code>. Two equals signs <code>==</code> compare, one <code>=</code> makes a variable.'
             ],
             data: BADGE_LIST,
             try: ['for badge in badges:\n    if badge % 7 == 0:\n        print("Lucky badge:", badge)'],
-            learn: '<code>==</code> checks whether two things are equal. <code>number % 7 == 0</code> is a classic trick to test whether a number divides exactly.',
+            learn: '<code>==</code> checks whether two things are equal, and <code>=</code> puts a value in a variable. <code>badge % 7 == 0</code> is a classic trick to test whether a number divides exactly.',
             clue: 'Found the Magpie\'s badge! Add it to the Evidence Board →',
             evidence: ['badge'],
             done: e => uses(e, /%\s*7/, /==/) && printed(e, String(BADGE))
@@ -144,11 +159,11 @@ CASES.push({
           tip: 'Loop through badges and print the one where badge % 7 == 0.' },
         { id: 'jcount', label: 'How many visitors have a first name starting with "J"?', bonus: true, ph: 'a number',
           check: v => v === String(J_COUNT),
-          tip: 'Loop through signed_in, use name.startswith("J"), and add 1 to a counter each time.' }
+          tip: 'Make j_count = 0, loop through signed_in, and add 1 to j_count each time name.startswith("J") is True.' }
     ],
 
     bonus: [
-        { title: 'Count the Js.', text: 'How many visitors\' first names start with "J"? Make a <code>count</code> variable, and add 1 each time <code>name.startswith("J")</code> is True. That\'s a bonus answer!', code: 'count = 0\nfor name in signed_in:\n    if name.startswith("J"):\n        count = count + 1\nprint(count)' },
+        { title: 'Count the Js.', text: 'How many visitors\' first names start with "J"? Make a variable called <code>j_count</code> that starts at 0, then add 1 to it each time <code>name.startswith("J")</code> is True. That\'s a bonus answer!', code: 'j_count = 0\nfor name in signed_in:\n    if name.startswith("J"):\n        j_count = j_count + 1\nprint(j_count)' },
         { title: 'Alphabetical order.', text: '<code>sorted()</code> gives you a sorted copy of a list.', code: 'for name in sorted(signed_in):\n    print(name)' },
         { title: 'First and last.', text: 'Lists count from 0, so <code>signed_in[0]</code> is the first name. What does <code>signed_in[-1]</code> give you?', code: 'print(signed_in[0])\nprint(signed_in[-1])' }
     ]

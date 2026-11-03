@@ -4,22 +4,22 @@
 # answer shiny: 11
 
 # ---- run
-with open("case_file.txt") as f:
-    text = f.read()
+with open("case_file.txt") as file:
+    text = file.read()
 print(text)
 
 # ---- run
-with open("usb/diary.txt") as f:
-    diary = f.read()
+with open("usb/diary.txt") as file:
+    diary = file.read()
 print(diary)
 print(diary.count("shiny"))
 
 # ---- run
-with open("usb/diary.txt") as f:
-    lines = f.readlines()
+with open("usb/diary.txt") as file:
+    lines = file.readlines()
 print(len(lines))
 
 # ---- run
-with open("usb/diary.txt") as f:
-    lines = f.readlines()
+with open("usb/diary.txt") as file:
+    lines = file.readlines()
 print(lines[41].strip())

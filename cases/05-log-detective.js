@@ -68,8 +68,8 @@ CASES.push({
         '# Case 5: Log Detective',
         '# Start by reading your case file.',
         '',
-        'with open("case_file.txt") as f:',
-        '    print(f.read())',
+        'with open("case_file.txt") as file:',
+        '    print(file.read())',
         ''
     ].join('\n'),
     files: {
@@ -100,52 +100,71 @@ CASES.push({
         [LOG]: LINES.join('\n') + '\n'
     },
 
+    // "What does each line do?" for lines the general explanations don't cover well
+    explain: {
+        'for line in lines[:5]:': 'A <b>loop</b> over <code>lines[:5]</code>. That\'s a <b>slice</b> of the list: just the first 5 lines (items 0, 1, 2, 3 and 4). Each time round, the current line is put in <code>line</code>.',
+        'if "DENIED" in line:': 'Checks whether the text <code>"DENIED"</code> appears anywhere in this line. The indented lines below only run if it does, so every other line is skipped.',
+        'refusals = {}': 'Makes an empty <b>dictionary</b> called <code>refusals</code>. Curly brackets <code>{}</code> make a dictionary. This one will keep a score for each badge, looked up by the badge number.',
+        'words = line.split()': 'Chops <code>line</code> into a list of words wherever there\'s a space, and calls that list <code>words</code>.',
+        'badge = words[-2].split("=")[1]': '<code>words[-2]</code> is the second-to-last word, like <code>"BADGE=B-1042"</code> (negative numbers count from the end). <code>.split("=")</code> chops it at the <code>=</code> into <code>["BADGE", "B-1042"]</code>, and <code>[1]</code> takes the second item: just the badge number.',
+        'refusals[badge] = refusals.get(badge, 0) + 1': 'Adds 1 to this badge\'s score. <code>refusals.get(badge, 0)</code> looks up the score so far (or 0 if this badge hasn\'t turned up yet), <code>+ 1</code> adds one, and <code>refusals[badge] =</code> stores the new score under that badge.',
+        'print(refusals)': 'Shows the whole dictionary: each badge, a colon, then how many times it was refused. It\'s not indented, so it runs once, after the loop has finished.',
+        'print("Most refused:", max(refusals, key=refusals.get))': '<code>max()</code> finds the biggest. <code>key=refusals.get</code> tells it to compare the badges by their <b>scores</b>, so you get the badge with the most refusals. It\'s shown after the words "Most refused:".',
+        [`if "${MAGPIE}" in line and "GRANTED" in line:`]: `Checks two things at once: is the badge <code>"${MAGPIE}"</code> in this line, <b>and</b> is the word <code>"GRANTED"</code> in it too? The indented line below only runs if both are true.`,
+        'swipes_per_hour = {}': 'Makes an empty dictionary called <code>swipes_per_hour</code>. It will hold a count of swipes for each hour of the day.',
+        'hour = line.split()[1][:2]': '<code>line.split()[1]</code> is the second word of the line: the time, like <code>"21:14:03"</code>. Then the slice <code>[:2]</code> takes its first two characters, which are the hour (<code>"21"</code>).',
+        'swipes_per_hour[hour] = swipes_per_hour.get(hour, 0) + 1': 'Adds 1 to this hour\'s count, the same way you counted badges: get the count so far (or 0), add one, and store it back.',
+        'print(max(swipes_per_hour, key=swipes_per_hour.get))': 'Shows the hour with the biggest count. <code>key=swipes_per_hour.get</code> makes <code>max()</code> compare the hours by their counts.',
+        'for badge in sorted(refusals, key=refusals.get, reverse=True):': 'A <b>loop</b> over the badges, in order of score. <code>sorted()</code> puts them in order, <code>key=refusals.get</code> sorts them by their scores, and <code>reverse=True</code> puts the biggest first.',
+        'print(badge, refusals[badge])': 'Shows the badge, then its score. <code>refusals[badge]</code> looks up the value stored under that badge.'
+    },
+
     missions: [
         {
             id: 'peek', title: 'Peek at the log', tutorial: true,
-            story: 'The log is far too long to print all at once and read. Detectives start by peeking at the <b>first few lines</b> to see what they look like.',
+            story: 'The log is a text file with over a hundred lines. Each line is one badge swipe: the date, the time, the door, the badge number and whether the door opened. That\'s far too much to read in one go, so detectives start by peeking at the <b>first few lines</b>.<br><br>Remember <code>file.readlines()</code> from the last case? It reads a file into a <b>list</b>, one line per item. You can take part of a list with a <b>slice</b>: <code>lines[:5]</code> means "the items from the start, up to item 5". Then a <code>for</code> loop can print each one.',
             task: 'Open <code>pavilion/doors.log</code>, read its lines into a list and print just the first 5.',
             tools: ['open', 'slicing'],
             hints: [
-                '<code>f.readlines()</code> gives you a list of lines.',
-                'A slice like <code>lines[:5]</code> takes the first 5 items of a list. Loop over that and print each one.'
+                '<code>file.readlines()</code> gives you a list of lines. Keep it in a variable: <code>lines = file.readlines()</code>',
+                '<code>lines[:5]</code> is the first 5 items of the list. Loop over it with <code>for line in lines[:5]:</code> and print each <code>line</code>.'
             ],
-            try: ['with open("pavilion/doors.log") as f:\n    lines = f.readlines()\n\nfor line in lines[:5]:\n    print(line.strip())'],
-            learn: '<code>lines[:5]</code> is a <b>slice</b>: the items from the start up to (but not including) number 5. <code>.strip()</code> removes the invisible newline at the end of each line.',
+            try: ['with open("pavilion/doors.log") as file:\n    lines = file.readlines()\n\nfor line in lines[:5]:\n    print(line.strip())'],
+            learn: '<code>lines[:5]</code> is a <b>slice</b>: the items from the start up to (but not including) number 5. That\'s items 0, 1, 2, 3 and 4, because Python counts from 0. <code>.strip()</code> removes the invisible "new line" character at the end of each line, so you don\'t get blank lines in between.',
             done: e => printed(e, LINES[0])
         },
         {
             id: 'denied', title: 'Only the refused swipes',
-            story: 'Most swipes say <code>RESULT=GRANTED</code>: the door opened. We only care about the ones where the door said <b>no</b>.',
+            story: 'Most swipes end in <code>RESULT=GRANTED</code>: the badge worked and the door opened. Some end in <code>RESULT=DENIED</code>: the door said <b>no</b>. Those are the ones we care about.<br><br>Every time you press Run, Python starts fresh. So keep the lines at the top that open the log and make <code>lines</code>, and add your new code underneath.',
             task: 'Loop over every line and print <b>only</b> the lines that contain <code>DENIED</code>.',
             tools: ['for', 'in', 'if', 'strip'],
             hints: [
-                'Loop with <code>for line in lines:</code> and use <code>if</code> to decide whether to print.',
-                '<code>"DENIED" in line</code> is True when the line contains the word DENIED.'
+                'Loop with <code>for line in lines:</code>. Inside the loop, use <code>if</code> to decide whether to print.',
+                '<code>"DENIED" in line</code> is True when the word DENIED is somewhere in the line.'
             ],
             try: ['for line in lines:\n    if "DENIED" in line:\n        print(line.strip())'],
-            learn: 'A <code>for</code> loop with an <code>if</code> inside is a <b>filter</b>: it keeps only the lines you care about. Detectives use this all the time!',
+            learn: 'A <code>for</code> loop with an <code>if</code> inside is a <b>filter</b>. The loop looks at every line, and the <code>if</code> only lets through the ones you care about. Detectives use this all the time!',
             done: e => uses(e, /DENIED/) && printed(e, MAGPIE_DENIED_LINE) && !e.stdout.includes('RESULT=GRANTED')
         },
         {
             id: 'count', title: 'Count the refusals per badge',
-            story: 'There are quite a few DENIED lines. Counting by eye is how detectives make mistakes! Let a <b>dictionary</b> keep score for each badge.',
-            task: 'For every DENIED line, pull out the badge number and count it in a dictionary. Print the dictionary. Which badge was refused the most?',
+            story: 'There are lots of DENIED lines, and counting by eye is how detectives make mistakes! We need a score for every badge. Python has the perfect tool: a <b>dictionary</b>.<br><br>A dictionary is like a list, but instead of numbered slots, each value has a <b>key</b>: a label you look it up by. Ours will use badge numbers as keys, and the number of refusals as values, like <code>{"B-0001": 2, "B-0002": 5}</code>. Curly brackets make a dictionary, so <code>refusals = {}</code> makes an empty one, ready to fill.<br><br>To get the badge out of a line, <code>line.split()</code> chops the line into a list of words at every space. Door names like East Wing have spaces too, so count from the <b>end</b>: the badge is always the second-to-last word, <code>words[-2]</code>.',
+            task: 'For every DENIED line, pull out the badge number and add 1 to its score in a dictionary. Print the dictionary. Which badge was refused the most?',
             tools: ['split', 'dict'],
             hints: [
-                '<code>line.split()</code> chops a line into a list of words. Door names have spaces in them, so count from the <b>end</b>: <code>parts[-2]</code> is the second-to-last word, <code>"BADGE=B-1042"</code>.',
-                '<code>"BADGE=B-1042".split("=")[1]</code> gives <code>"B-1042"</code>.',
-                'Start with <code>counts = {}</code>, then for each badge: <code>counts[badge] = counts.get(badge, 0) + 1</code>'
+                '<code>words = line.split()</code> turns a line into a list of words ending <code>[..., "Wing", "BADGE=B-1042", "RESULT=DENIED"]</code>. So <code>words[-2]</code> is <code>"BADGE=B-1042"</code>.',
+                '<code>"BADGE=B-1042".split("=")</code> chops at the <code>=</code> and gives <code>["BADGE", "B-1042"]</code>. Add <code>[1]</code> to take the second item, <code>"B-1042"</code>.',
+                'Make <code>refusals = {}</code> before the loop. Then for each badge: <code>refusals[badge] = refusals.get(badge, 0) + 1</code>'
             ],
-            try: ['counts = {}\nfor line in lines:\n    if "DENIED" in line:\n        parts = line.split()\n        badge = parts[-2].split("=")[1]\n        counts[badge] = counts.get(badge, 0) + 1\n\nprint(counts)\nprint("Most refused:", max(counts, key=counts.get))'],
-            learn: 'A <b>dictionary</b> (<code>{}</code>) stores a value for each key. <code>counts.get(badge, 0) + 1</code> means "what we had before (or 0), plus one". And <code>parts[-2]</code> counts from the end of a list.',
+            try: ['refusals = {}\nfor line in lines:\n    if "DENIED" in line:\n        words = line.split()\n        badge = words[-2].split("=")[1]\n        refusals[badge] = refusals.get(badge, 0) + 1\n\nprint(refusals)\nprint("Most refused:", max(refusals, key=refusals.get))'],
+            learn: 'A <b>dictionary</b> (<code>{}</code>) stores a value for each key. <code>refusals.get(badge, 0)</code> looks up a badge\'s score so far, or gives 0 if it isn\'t in the dictionary yet. Add 1, store it back, and that swipe is counted! Negative positions count from the end of a list: <code>[-1]</code> is the last item, <code>[-2]</code> the one before.',
             clue: 'One badge was refused far more than any other. Add it to the Evidence Board →',
             evidence: ['badge'],
             done: e => uses(e, /\{\s*\}|dict\s*\(|Counter/) && printed(e, MAGPIE)
         },
         {
             id: 'door', title: 'Which door gave in?',
-            story: 'After all those refusals, the suspicious badge finally got a <code>GRANTED</code>. Which door let the Magpie in?',
+            story: 'After all those refusals, the suspicious badge finally got a <code>GRANTED</code>. Which door let the Magpie in?<br><br>This time a line has to pass <b>two</b> tests: it must contain the badge number, <b>and</b> it must contain the word GRANTED. Python\'s <code>and</code> joins two tests together, and the <code>if</code> only runs when both are True.',
             task: 'Print the line (or lines) where the suspicious badge was <b>GRANTED</b>, and nothing else.',
             tools: ['if', 'in'],
             hints: [
@@ -153,7 +172,7 @@ CASES.push({
                 '<code>if "B-...." in line and "GRANTED" in line:</code> (put in the badge you found).'
             ],
             try: [`for line in lines:\n    if "${MAGPIE}" in line and "GRANTED" in line:\n        print(line.strip())`],
-            learn: '<code>and</code> lets an <code>if</code> check two things at once: both have to be True.',
+            learn: '<code>and</code> lets an <code>if</code> check two things at once: both have to be True. There\'s also <code>or</code>, which only needs one of them to be True.',
             clue: 'Now you know which door the Magpie got through. Add it to the Evidence Board →',
             evidence: ['door'],
             done: e => uses(e, /GRANTED/) && printed(e, MAGPIE_IN_LINE) && e.stdout.split('\n').filter(l => l.trim()).length <= 3
@@ -162,7 +181,7 @@ CASES.push({
             id: 'report', title: 'File your report', final: true,
             story: 'You\'ve tracked the Magpie through the Royal Pavilion\'s own log. Inspector Ada is waiting!',
             task: 'Record any evidence you\'re still missing to close the case.',
-            hints: ['Which badge had the biggest count in your dictionary? And which door does its GRANTED line mention?'],
+            hints: ['Which badge had the biggest score in your dictionary? And which door does its GRANTED line mention?'],
             done: () => false
         }
     ],
@@ -181,10 +200,10 @@ CASES.push({
     ],
 
     bonus: [
-        { title: 'Rush hour.', text: 'Which hour had the most swipes of all? Count the hours with a dictionary. That\'s a bonus answer!',
-          code: 'hours = {}\nfor line in lines:\n    hour = line.split()[1][:2]\n    hours[hour] = hours.get(hour, 0) + 1\nprint(max(hours, key=hours.get))' },
-        { title: 'Door popularity.', text: 'Which door is used the most? Try <code>line.split("DOOR=")[1].split(" BADGE")[0]</code> to pull out the door name.' },
-        { title: 'Sorted scores.', text: 'Print your badge counts from most to fewest refusals.', code: 'for badge in sorted(counts, key=counts.get, reverse=True):\n    print(badge, counts[badge])' }
+        { title: 'Rush hour.', text: 'Which hour had the most swipes of all? Count the hours with a dictionary, just like the badges. The time is the second word of each line, and its first two characters are the hour. That\'s a bonus answer!',
+          code: 'swipes_per_hour = {}\nfor line in lines:\n    hour = line.split()[1][:2]\n    swipes_per_hour[hour] = swipes_per_hour.get(hour, 0) + 1\nprint(max(swipes_per_hour, key=swipes_per_hour.get))' },
+        { title: 'Door popularity.', text: 'Which door is used the most? Try <code>line.split("DOOR=")[1].split(" BADGE")[0]</code> to pull out the door name. It chops the line at <code>DOOR=</code> and keeps the part after it, then chops that at <code> BADGE</code> and keeps the part before.' },
+        { title: 'Sorted scores.', text: 'Print your badge scores from most refusals to fewest. Put it below your counting code, so <code>refusals</code> exists.', code: 'for badge in sorted(refusals, key=refusals.get, reverse=True):\n    print(badge, refusals[badge])' }
     ]
 });
 })();

@@ -75,8 +75,8 @@ for badge in badges:
     if badge % 7 == 0:
         print("Lucky badge:", badge)
 
-count = 0
+j_count = 0
 for name in signed_in:
     if name.startswith("J"):
-        count = count + 1
-print(count)
+        j_count = j_count + 1
+print(j_count)

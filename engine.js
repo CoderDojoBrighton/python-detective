@@ -2,9 +2,14 @@
 //  Python Detective: game engine
 //  Cases live in cases/*.js and push themselves onto CASES.
 //  Python itself runs in a Web Worker (py-worker.js); mission checks use
-//  the helpers in checks.js.
+//  the helpers in checks.js; snippet explanations and the 📖 Python
+//  reference live in explain.js.
 // =====================================================================
 
+// Output colours. Each one means one thing, and the key above the output says so:
+//   plain white = printed by the student's code      green   = Detective HQ (the game) talking
+//   magenta     = tips (shown purple)                red     = errors
+// Yellow is kept for "text in quotes" in the editor, so it's not used in the output.
 const C = {
     r: '\x1b[0m', b: '\x1b[1m', dim: '\x1b[2m',
     red: '\x1b[91m', green: '\x1b[92m', yellow: '\x1b[93m', blue: '\x1b[94m',
@@ -45,6 +50,9 @@ function loadDraft(c) {
 function saveDraft(c, code) {
     try { localStorage.setItem(draftKey(c), code); } catch { /* storage unavailable */ }
 }
+function clearDraft(c) {
+    try { localStorage.removeItem(draftKey(c)); } catch { /* storage unavailable */ }
+}
 
 // How far the student got in each case (objectives, hints, correct answers)
 const caseKey = c => `pythonDetective.case.${c.id}`;
@@ -53,7 +61,8 @@ function loadCaseState(c) {
 }
 function saveCaseState() {
     const st = { done: [...S.done], hintLevel: S.hintLevel, hintsUsed: S.hintsUsed, solved: S.solved,
-        answers: S.evAns, skipped: [...S.evSkip] };
+        answers: S.evAns, skipped: [...S.evSkip],
+        practice: S.practice && { id: S.practice.id, line: S.practice.anchor?.find()?.line } };
     try { localStorage.setItem(caseKey(S.c), JSON.stringify(st)); } catch { /* storage unavailable */ }
 }
 function clearCaseState(c) {
@@ -106,74 +115,12 @@ function closeBriefing() {
     editor?.focus();
 }
 
-const escapeHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-// =====================================================================
-//  Python reference (the 📖 Python tab and the mission tool chips)
-// =====================================================================
-const PYREF = {
-    'print':      { desc: 'show something on the screen',        ex: 'print("Hello, detective!")',
-                    man: 'print() shows things in the output panel.\n\n  print("hello")            text goes in quotes\n  print(42)                 numbers don\'t need quotes\n  print("Age:", 12)         commas print several things with spaces between\n  print("a", "b", sep="")   sep="" means no spaces' },
-    'variables':  { desc: 'store a value with a name',           ex: 'codename = "Agent Sparrow"',
-                    man: 'A variable is a labelled box that holds a value.\n\n  name = "Ada"           a string (text)\n  age = 12               a number\n  print(name)            use the box\'s name to get the value back\n\n  Names can\'t have spaces: use_underscores_instead' },
-    'strings':    { desc: 'text in quotes',                      ex: 'message = "part one " + "part two"',
-                    man: 'A string is text inside quotes: "like this" or \'like this\'.\n\n  "abc" + "def"          join strings  -> "abcdef"\n  "ha" * 3               repeat        -> "hahaha"\n  len("hello")           how long      -> 5\n  "hello".upper()        -> "HELLO"\n  "Bandstand".lower()    -> "bandstand"\n  "banana".count("a")    -> 3' },
-    'f-strings':  { desc: 'put variables inside text',           ex: 'print(f"Agent {codename} reporting")',
-                    man: 'An f-string has an f before the quotes. Anything in {curly brackets} is filled in.\n\n  name = "Ada"\n  print(f"Hello {name}!")         -> Hello Ada!\n  print(f"2 + 2 = {2 + 2}")       -> 2 + 2 = 4' },
-    'len':        { desc: 'how long a string or list is',        ex: 'print(len(message))',
-                    man: 'len() counts things.\n\n  len("hello")           -> 5 characters (spaces count too!)\n  len([3, 1, 4])         -> 3 items in a list' },
-    'maths':      { desc: 'add, subtract, multiply, divide',     ex: 'print(3600 // 900)',
-                    man: 'Python is a brilliant calculator.\n\n  7 + 3    -> 10        7 - 3    -> 4\n  7 * 3    -> 21        7 / 2    -> 3.5\n  7 // 2   -> 3   (whole-number divide)\n  7 % 2    -> 1   (the REMAINDER left over)\n  2 ** 3   -> 8   (power: 2 x 2 x 2)' },
-    'int/str':    { desc: 'turn text into numbers and back',     ex: 'code = str(4) + str(2)',
-                    man: 'Numbers and text are different types.\n\n  "4" + "2"        -> "42"   (joining text)\n  4 + 2            -> 6      (adding numbers)\n  str(4)           -> "4"    number to text\n  int("42")        -> 42     text to number\n\n  "Age: " + 12  is an ERROR. Use "Age: " + str(12)' },
-    'if':         { desc: 'only do something when it\'s true',   ex: 'if code > 5000:\n    print("ALARM")\nelse:\n    print("SAFE")',
-                    man: 'if runs the indented lines only when the test is True.\n\n  if score > 100:\n      print("High score!")\n  elif score > 50:\n      print("Not bad")\n  else:\n      print("Keep trying")\n\n  Tests:  ==  equal    !=  not equal    <  >  <=  >=\n  Don\'t forget the colon : and the 4 spaces!' },
-    'lists':      { desc: 'a collection of things',              ex: 'suspects = ["Ada", "Ben", "Chloe"]',
-                    man: 'A list holds lots of values, in order, in [square brackets].\n\n  names = ["Ada", "Ben", "Chloe"]\n  names[0]               -> "Ada"   (counting starts at 0!)\n  names[-1]              -> "Chloe" (the last one)\n  len(names)             -> 3\n  names.append("Dev")    add to the end\n  sorted(names)          a sorted copy' },
-    'for':        { desc: 'repeat for each item',                ex: 'for name in names:\n    print(name)',
-                    man: 'for repeats the indented lines once for each item.\n\n  for name in names:\n      print(name)\n\n  for i in range(5):      i = 0, 1, 2, 3, 4\n      print(i)\n\n  for letter in "abc":    works on strings too!\n      print(letter)' },
-    'in':         { desc: 'is it in there?',                     ex: 'if "Ben" not in signed_out:',
-                    man: 'in checks whether something is inside a list or string.\n\n  "Ben" in ["Ada", "Ben"]       -> True\n  "Zoe" not in ["Ada", "Ben"]   -> True\n  "pier" in "west pier"         -> True' },
-    'open':       { desc: 'open a file to read it',              ex: 'with open("case_file.txt") as f:\n    text = f.read()\nprint(text)',
-                    man: 'open() opens a file. "with" closes it again for you.\n\n  with open("notes.txt") as f:\n      text = f.read()            the whole file as one string\n\n  with open("notes.txt") as f:\n      lines = f.readlines()      a list of lines\n\n  with open("notes.txt") as f:\n      for line in f:             one line at a time\n          print(line.strip())' },
-    'write':      { desc: 'save text into a file',               ex: 'with open("report.txt", "w") as f:\n    f.write("Case closed!")',
-                    man: 'Open a file with "w" to write to it (careful: it replaces what was there).\n\n  with open("report.txt", "w") as f:\n      f.write("line one\\n")\n      f.write("line two\\n")\n\n  "a" adds to the end instead of replacing.' },
-    'enumerate':  { desc: 'count while you loop',                ex: 'for number, line in enumerate(lines, 1):\n    print(number, line)',
-                    man: 'enumerate() gives you a counter AND the item.\n\n  for i, name in enumerate(["a", "b"], 1):\n      print(i, name)       -> 1 a   then   2 b' },
-    'strip':      { desc: 'remove spaces and newlines at the ends', ex: 'line = line.strip()',
-                    man: 'Lines read from a file end with an invisible newline "\\n".\n\n  "  hello\\n".strip()     -> "hello"' },
-    'split':      { desc: 'chop a string into a list',           ex: 'parts = line.split()',
-                    man: 'split() chops text into a list.\n\n  "a b c".split()           -> ["a", "b", "c"]   (on spaces)\n  "1,2,3".split(",")        -> ["1", "2", "3"]\n  "KEY=value".split("=")    -> ["KEY", "value"]' },
-    'startswith': { desc: 'does the text start (or end) with...', ex: 'if line.startswith("Day"):',
-                    man: 'Check the start or end of a string.\n\n  "Day 4: rain".startswith("Day")   -> True\n  "photo.jpg".endswith(".jpg")      -> True' },
-    'dict':       { desc: 'look things up by name; count things', ex: 'counts = {}\ncounts[name] = counts.get(name, 0) + 1',
-                    man: 'A dictionary maps keys to values, in {curly brackets}.\n\n  ages = {"Ada": 12, "Ben": 11}\n  ages["Ada"]               -> 12\n  ages["Chloe"] = 13        add a new key\n\n  Counting things:\n  counts = {}\n  for word in words:\n      counts[word] = counts.get(word, 0) + 1\n\n  Biggest value:  max(counts, key=counts.get)' },
-    'os':         { desc: 'look inside folders',                 ex: 'import os\nprint(os.listdir())',
-                    man: 'The os module explores files and folders.\n\n  import os\n  os.listdir()                   what\'s in this folder\n  os.listdir("/evidence")        what\'s in another folder\n  os.path.join("a", "b.txt")     -> "a/b.txt"\n  os.path.isdir(path)            is it a folder?\n  os.getcwd()                    which folder am I in?' },
-    'os.walk':    { desc: 'visit every folder inside a folder',  ex: 'for folder, subfolders, files in os.walk("/evidence"):\n    for name in files:\n        print(os.path.join(folder, name))',
-                    man: 'os.walk() visits a folder, then every folder inside it, and inside those...\n\n  import os\n  for folder, subfolders, files in os.walk("/evidence"):\n      print(folder, files)\n\n  Or use glob with ** to match files anywhere:\n  import glob\n  glob.glob("/evidence/**/*.txt", recursive=True)' },
-    'slicing':    { desc: 'take part of a string or list',       ex: 'print(text[::-1])',
-                    man: 'Square brackets with colons take slices: [start:stop:step]\n\n  s = "detective"\n  s[0]        -> "d"\n  s[0:3]      -> "det"\n  s[-3:]      -> "ive"\n  s[::2]      -> "dtcie"   every 2nd letter\n  s[::-1]     -> "evitceted"   backwards!' },
-    'join':       { desc: 'glue a list of strings together',     ex: 'word = "".join(letters)',
-                    man: 'join() is the opposite of split().\n\n  "".join(["a", "b", "c"])      -> "abc"\n  " ".join(["hi", "there"])     -> "hi there"' },
-    'ord/chr':    { desc: 'letters are secretly numbers',        ex: 'print(ord("A"), chr(66))',
-                    man: 'Every character has a number code.\n\n  ord("A")    -> 65\n  chr(66)     -> "B"\n\n  Shift a capital letter by 3, wrapping Z round to A:\n  chr((ord(letter) - 65 + 3) % 26 + 65)' },
-    'def':        { desc: 'make your own function',              ex: 'def shout(word):\n    return word.upper() + "!"',
-                    man: 'def makes a reusable function.\n\n  def double(n):\n      return n * 2\n\n  print(double(21))    -> 42' },
-    'base64':     { desc: 'decode base64, hex and binary',       ex: 'import base64\nprint(base64.b64decode(text).decode())',
-                    man: 'Ways computers write bytes as text:\n\n  import base64\n  base64.b64decode("SGk=").decode()       -> "Hi"\n  base64.b64encode(b"Hi").decode()        -> "SGk="\n\n  bytes.fromhex("4869").decode()          -> "Hi"\n  int("01001000", 2)                      -> 72  (then chr(72) -> "H")' },
-    'hashlib':    { desc: 'make a fingerprint (hash) of text',   ex: 'import hashlib\nprint(hashlib.sha256(b"hello").hexdigest())',
-                    man: 'A hash is a fingerprint of some data. The same text always gives\nthe same hash, but you can\'t turn a hash back into the text.\n\n  import hashlib\n  hashlib.sha256("hello".encode()).hexdigest()' },
-    'xor':        { desc: 'flip bits with a secret key',         ex: 'print(chr(byte ^ 42))',
-                    man: '^ is XOR. Doing it twice with the same key gets you back where you started:\n\n  65 ^ 42       -> 107\n  107 ^ 42      -> 65\n\n  data = bytes.fromhex("6b4f")\n  "".join(chr(b ^ 42) for b in data)' }
-};
-
 // Friendlier explanations for the errors beginners hit most
 const ERROR_HELP = {
     SyntaxError: 'Python couldn\'t understand this line. Look for a missing bracket ( ), quote " or colon : at the end of an if/for line.',
     IndentationError: 'The spaces at the start of a line are wrong. Lines inside an if, for or def need 4 spaces in front.',
     TabError: 'Mixing tabs and spaces confuses Python. Use 4 spaces.',
-    NameError: 'Python doesn\'t know that name. Is it spelled the same everywhere? Did you make the variable before using it? Text needs "quotes".',
+    NameError: 'Python doesn\'t know that name. Is it spelled the same everywhere, with the same capital letters? (Print and print are different!) Did you make the variable before using it? Text needs "quotes".',
     TypeError: 'You mixed up types, like adding a number to text. Try str(number) to turn it into text, or int(text) to make a number.',
     FileNotFoundError: 'There\'s no file with that name here. Check the spelling and the folder. Try print(os.listdir()) to see what\'s here.',
     IsADirectoryError: 'That\'s a folder, not a file. Use os.listdir() to look inside it.',
@@ -200,7 +147,8 @@ function newState(c) {
     return {
         c, runs: 0, running: false,
         done: new Set(), hintLevel: {}, hintsUsed: 0, lastLearned: null, solved: false,
-        evOk: new Set(), evAns: {}, evTip: {}, evSkip: new Set()
+        evOk: new Set(), evAns: {}, evTip: {}, evSkip: new Set(),
+        stuck: 0, errRepeat: 0, practice: null, celebrate: null, evWrong: null
     };
 }
 
@@ -294,17 +242,65 @@ async function runCode() {
 
     if (result.stopped === 'timeout') {
         printErr(`⏱  Your code ran for ${RUN_TIMEOUT_MS / 1000} seconds, so I stopped it.`);
-        print(`${C.dim}   Is there a loop that never ends? A while loop needs something that makes it stop.${C.r}`);
+        print(`${C.magenta}   💡 Is there a loop that never ends? A while loop needs something that makes it stop.${C.r}`);
         return;
     }
-    if (result.stopped) { print(`${C.yellow}⏹  Stopped.${C.r}`); return; }
+    if (result.stopped) { print(`${C.green}⏹  Stopped.${C.r}`); return; }
     if (result.fatal) { printErr(`Oops, something went wrong running Python (${result.fatal}). Please tell a mentor!`); return; }
 
+    const ignored = result.error ? [] : ignoredValues(code);
     if (result.error) showError(result.error, code);
-    else if (!result.stdout) print(`${C.dim}(your code ran, but didn't print anything. Use print() to see results)${C.r}`);
+    else if (ignored.length) showIgnored(ignored);
+    else if (!result.stdout) print(`${C.magenta}💡 Your code ran, but it didn't print anything, so there's nothing to see.\n   Python works silently: use print() to show a result, e.g. print(message)${C.r}`);
 
+    const cur = currentMission(), waiting = !cur || S.done.has(cur.id), doneBefore = S.done.size;
     for (const e of result.events) checkMissions(e);
     checkMissions({ type: 'run', code, stdout: result.stdout, ok: result.ok, error: result.error });
+    if (!waiting && S.done.size === doneBefore) noticeStuck(code, result, ignored.length > 0);
+    S.lastOut = result.stdout;
+    S.lastCode = code;
+}
+
+// =====================================================================
+//  Spotting a student who's stuck
+// =====================================================================
+// Lines that work out an answer and then throw it away, like len(message) on its own
+const KEEPS_NOTHING_AWAY = /^(if|elif|else|for|while|with|def|class|return|import|from|try|except|finally|pass|break|continue|global|nonlocal|del|assert|raise|yield|async|await)\b/;
+const DOES_SOMETHING = /^(print|input|exec|help|exit|quit)\s*\(|\.(append|extend|insert|remove|sort|reverse|update|clear|pop|add|discard|write|writelines|close|seek|shuffle|sleep|seed|mkdir|makedirs|rename|chdir)\s*\(/;
+function ignoredValues(code) {
+    const own = [...code.matchAll(/^\s*def\s+(\w+)/gm)].map(m => m[1]);
+    return splitStatements(code).filter(s => {
+        const t = s.lines[0].trim();
+        if (!t || t.startsWith('#') || /^("""|''')/.test(t) || KEEPS_NOTHING_AWAY.test(t) || DOES_SOMETHING.test(t)) return false;
+        if (/^[\w.]+(\[[^\]]*\])*(\s*,\s*[\w.]+)*\s*([-+*/%]|\/\/|\*\*)?=(?!=)/.test(t)) return false;    // making a variable
+        return !own.some(name => t.startsWith(name + '('));                                         // their own function may print
+    }).map(s => ({ line: s.from, text: s.lines.join('\n').trim() }));
+}
+
+function showIgnored(list) {
+    const { line, text } = list[0];
+    markTipLine(line);
+    const short = text.length <= 40 && !text.includes('\n');
+    if (/^\w+$/.test(text)) {
+        print(`${C.magenta}💡 Line ${line}: ${text} on its own doesn't show anything.\n   To see what's inside it, use print(${text})${C.r}`);
+    } else {
+        print(`${C.magenta}💡 Line ${line}: ${short ? text : 'this line'} works out an answer... and then nothing happens to it,\n   so you can't see it. Only print() shows things in this panel.` +
+            (short ? `\n   Either print the answer straight away:   print(${text})\n   or catch it in a variable, then print that:   answer = ${text}\n                                                  print(answer)` : '') + C.r);
+    }
+    if (list.length > 1) print(`${C.magenta}   (The same goes for line${list.length > 2 ? 's' : ''} ${list.slice(1).map(x => x.line).join(', ')}.)${C.r}`);
+}
+
+// Called after a run that didn't finish the objective
+function noticeStuck(code, result, explained) {
+    S.stuck++;
+    S.errRepeat = result.error && result.error.type === S.lastErr ? S.errRepeat + 1 : result.error ? 1 : 0;
+    S.lastErr = result.error?.type;
+    if (result.ok && !explained && result.stdout === S.lastOut && code !== S.lastCode)
+        print(`${C.magenta}💡 Your output is exactly the same as last time. Your new code ran, but it didn't\n   print anything new. Only print() puts things in this panel.${C.r}`);
+    if (S.errRepeat === 3)
+        print(`${C.magenta}💡 That's the same error three times in a row. Compare your line with the code in the\n   panel on the right, letter by letter, or press 💡 Need a hint?${C.r}`);
+    if (S.stuck === 2) renderCasePanel();          // shows "type it for me"
+    if (S.stuck === 3) coach('stuck');
 }
 
 function showError(err, code) {
@@ -317,7 +313,19 @@ function showError(err, code) {
     }
     print(`${C.red}   ${err.msg.replace(/\[Errno \d+\] /, '')}${C.r}`);
     const help = ERROR_HELP[err.type];
-    if (help) print(`${C.yellow}   💡 ${help}${C.r}`);
+    const near = err.type === 'NameError' && sameButCapitals(err.msg, code);
+    if (near) print(`${C.magenta}   💡 Did you mean ${near}? Python cares about capital letters: to Python, ${err.msg.match(/'(\w+)'/)[1]} and ${near} are different words.${C.r}`);
+    else if (help) print(`${C.magenta}   💡 ${help}${C.r}`);
+    coach('error');
+}
+
+// "name 'Print' is not defined": a Python word or one of their names, with different capitals
+function sameButCapitals(msg, code) {
+    const name = msg.match(/name '(\w+)' is not defined/)?.[1];
+    if (!name) return null;
+    const known = ['print', 'len', 'str', 'int', 'float', 'range', 'open', 'sorted', 'list', 'dict', 'max', 'min', 'sum',
+        'True', 'False', 'None', 'enumerate', 'ord', 'chr', 'format', 'bytes', ...(code.match(/[A-Za-z_]\w*/g) || [])];
+    return known.find(w => w !== name && w.toLowerCase() === name.toLowerCase()) || null;
 }
 
 function renderRunState() {
@@ -379,7 +387,9 @@ function ensureEditor() {
         tabSize: 4,
         indentWithTabs: false,
         matchBrackets: true,
-        autoCloseBrackets: true,
+        // No auto-closing brackets or quotes: beginners should type every character themselves
+        // (the ghost code shows the closing ones), and surprise extra quotes confused them
+        autoCloseBrackets: false,
         extraKeys: {
             'Ctrl-Enter': runCode, 'Cmd-Enter': runCode,
             'Tab': cm => cm.somethingSelected() ? cm.indentSelection('add') : cm.replaceSelection('    '),
@@ -393,15 +403,226 @@ function ensureEditor() {
         clearTimeout(saveTimer);
         saveTimer = setTimeout(() => S && saveDraft(S.c, editor.getValue()), 400);
     });
+    editor.on('cursorActivity', updateGhost);
 }
 
-let errorLine = null;
-function markErrorLine(n) {
-    clearErrorLine();
-    errorLine = editor.addLineClass(n - 1, 'background', 'cm-error-line');
+// =====================================================================
+//  Type it yourself: a mission's typeIt code is shown as grey "ghost"
+//  code in the editor for the student to type over. ⟨…⟩ marks a part they
+//  can change (ghost shows the example; anything typed there is fine).
+// =====================================================================
+const parseTemplate = line => line.split(/(⟨[^⟩]*⟩)/).filter(Boolean).map(p => p.startsWith('⟨') ? { wild: p.slice(1, -1) } : { lit: p });
+const plainCode = code => code.replace(/[⟨⟩]/g, '');
+
+// Compare what's typed on a line with one template line. Spaces are optional, like in Python.
+// Returns { state: 'done' | 'partial' | 'wrong', rest: the ghost still to type, at: where it went wrong }
+function matchTemplate(typed, tokens) {
+    let p = 0;
+    // ci is how far into token ti they've got. In a changeable part, the example keeps showing
+    // while what they've typed still matches it, e.g. "A" -> ghost "gent Sparrow"
+    const restFrom = (ti, ci, wildTyped = '') => tokens.slice(ti).map((t, k) =>
+        k ? (t.lit ?? t.wild) : t.lit != null ? t.lit.slice(ci)
+            : t.wild.toLowerCase().startsWith(wildTyped.toLowerCase()) ? t.wild.slice(wildTyped.length) : '').join('');
+    for (let ti = 0; ti < tokens.length; ti++) {
+        const t = tokens[ti];
+        if (t.lit != null) {
+            for (let ci = 0; ci < t.lit.length; ci++) {
+                const want = t.lit[ci];
+                while (p < typed.length && typed[p] === ' ' && want !== ' ') p++;
+                if (p >= typed.length) return { state: 'partial', rest: restFrom(ti, ci) };
+                if (typed[p] === want) p++;
+                else if (want !== ' ') return { state: 'wrong', at: p, rest: restFrom(ti, ci) };
+            }
+        } else {
+            const stop = tokens[ti + 1]?.lit?.[0], start = p;
+            while (p < typed.length && typed[p] !== stop) p++;
+            if (p >= typed.length) return { state: 'partial', rest: restFrom(ti, 0, typed.slice(start)) };
+            if (p === start) return { state: 'wrong', at: p, rest: restFrom(ti, 0) };
+        }
+    }
+    const extra = typed.slice(p).trim();
+    return extra && !extra.startsWith('#') ? { state: 'wrong', at: p, rest: '' } : { state: 'done', rest: '' };
 }
+
+// The anchor is a bookmark at the end of the last line of code that was there before. Everything
+// after it is where they type: the first non-blank line there is template line 1, the next is line 2...
+function startPractice(m, savedLine) {
+    stopPractice();
+    // Data the mission needs (like the note's scraps) goes in first, above where they type
+    if (m.data && !editor.getValue().includes(m.data.split('\n')[0])) appendCode(m.data);
+    let a = savedLine ?? editor.lastLine();
+    if (a > editor.lastLine()) a = editor.lastLine();
+    if (savedLine == null) while (a >= 0 && !editor.getLine(a).trim()) a--;
+    if (editor.getLine(editor.lastLine()).trim()) editor.replaceRange('\n', CodeMirror.Pos(editor.lastLine()));
+    S.practice = { id: m.id, lines: m.typeIt.split('\n').map(parseTemplate), plain: plainCode(m.typeIt).split('\n'),
+        anchor: a >= 0 ? editor.setBookmark(CodeMirror.Pos(a, editor.getLine(a).length)) : null, marks: [], typed: false };
+    editor.setCursor(editor.lastLine(), 0);
+    updateGhost();
+}
+
+function stopPractice() {
+    if (!S?.practice) return;
+    S.practice.marks.forEach(x => x.clear());
+    S.practice.anchor?.clear();
+    S.practice = null;
+}
+
+// Add code to the end without moving on to anything else
+function appendCode(code) {
+    const cur = editor.getValue();
+    const sep = !cur.trim() ? '' : cur.endsWith('\n\n') ? '' : cur.endsWith('\n') ? '\n' : '\n\n';
+    if (!cur.trim()) editor.setValue(code + '\n');
+    else editor.replaceRange(sep + code + '\n', CodeMirror.Pos(editor.lastLine()));
+}
+
+// Match the lines they've typed with the template. Returns
+//   start: the first line of the typing area
+//   rows:  [{ line, k, r }]: editor line, template line it's matched with, and matchTemplate's result
+function practiceLayout() {
+    const P = S.practice, last = editor.lastLine(), cursor = editor.getCursor().line;
+    const blank = d => !editor.getLine(d).trim();
+    let start = (P.anchor?.find()?.line ?? -1) + 1;
+    while (start > 0 && blank(start - 1)) start--;      // the line before was emptied: the area grows upwards
+    // An empty line only counts if the cursor's on it, ready to type, with nothing typed below it
+    const lines = [];
+    for (let d = start; d <= last; d++)
+        if (!blank(d) || (d === cursor && [...Array(last - d)].every((_, i) => blank(d + 1 + i)))) lines.push(d);
+    const rows = [];
+    for (let i = 0, k = 0; i < lines.length && k < P.lines.length; i++) {
+        const d = lines[i], text = editor.getLine(d), r = matchTemplate(text, P.lines[k]);
+        const next = lines[i + 1] != null && matchTemplate(editor.getLine(lines[i + 1]), P.lines[k]).state;
+        // A wrong line followed by a better try at the same line (a retype, or lines in the wrong order)
+        if (r.state === 'wrong' && (next === 'done' || next === 'partial')) { rows.push({ line: d, k: null, r }); continue; }
+        // Two lines joined into one (Delete or Backspace at the end of a line): it stands for both
+        if (r.state === 'wrong' && r.at > 0 && k + 1 < P.lines.length
+            && matchTemplate(text.slice(0, r.at), P.lines[k]).state === 'done'
+            && matchTemplate(text.slice(r.at), P.lines[k + 1]).state !== 'wrong') {
+            rows.push({ line: d, k, r: { state: 'joined', at: r.at } }, { line: d, k: k + 1, r: { state: 'joined-2' } });
+            k += 2;
+            continue;
+        }
+        // Enter pressed in the middle of a line: the next line is the rest of this one
+        const after = lines[i + 1] != null ? editor.getLine(lines[i + 1]).trim() : '';
+        if (r.state === 'partial' && after && d !== cursor && matchTemplate(text + after, P.lines[k]).state !== 'wrong') {
+            rows.push({ line: d, k, r: { state: 'split' }, end: lines[i + 1] }, { line: lines[i + 1], k: null, split: true });
+            i++; k++;
+            continue;
+        }
+        rows.push({ line: d, k, r });
+        k++;
+    }
+    return { start, rows: rows.filter(x => x.k != null), extra: rows.filter(x => x.k == null) };
+}
+
+// Would the line be right if capital letters didn't matter?
+function onlyCapitals(text, tokens) {
+    const lower = tokens.map(t => t.lit != null ? { lit: t.lit.toLowerCase() } : t);
+    return matchTemplate(text.toLowerCase(), lower).state !== 'wrong';
+}
+
+// The end of the mistake in a line: the rest of that word, or at least one character
+function mistakeEnd(text, at) {
+    const m = text.slice(at).match(/^\w+/);
+    return Math.min(text.length, at + Math.max(1, m ? m[0].length : 1));
+}
+
+function ghostBlock(lines, cls, label) {
+    const el = document.createElement('div');
+    el.className = cls;
+    el.innerHTML = (label ? `<div class="ghost-label">${label}</div>` : '') + `<pre>${lines.map(escapeHtml).join('\n')}</pre>`;
+    return el;
+}
+
+function ghostInline(line, ch, text) {
+    const span = document.createElement('span');
+    span.className = 'cm-ghost';
+    span.textContent = text;
+    return editor.setBookmark(CodeMirror.Pos(line, ch), { widget: span, insertLeft: true });
+}
+
+function updateGhost() {
+    const P = S?.practice;
+    if (!P) return;
+    P.marks.forEach(x => x.clear());
+    P.marks = [];
+    const { start, rows, extra } = practiceLayout();
+    const left = P.plain.slice(rows.length);
+    for (const x of extra) {
+        const text = editor.getLine(x.line);
+        P.marks.push(editor.markText(CodeMirror.Pos(x.line, 0), CodeMirror.Pos(x.line, text.length), { className: 'cm-ghost-wrong' }));
+        const el = document.createElement('div');
+        el.className = 'ghost-wrong';
+        el.innerHTML = `<div class="ghost-label">${x.split
+            ? '✖ This is the end of the line above! Click at the start of this line and press Backspace to join them.'
+            : '✖ This line isn\'t the next one to type. Delete it, or move it to the right place.'}</div>`;
+        P.marks.push(editor.addLineWidget(x.line, el));
+    }
+    if (!left.length && !extra.length && rows.every(x => x.r.state === 'done')) {
+        if (!P.typed) { P.typed = true; $('#run-hint').classList.add('show'); toast('✔ You typed it all! Now press ▶ Run'); }
+        return;
+    }
+    P.typed = false;
+    for (const { line, k, r } of rows) {
+        const text = editor.getLine(line);
+        if (r.state === 'partial') P.marks.push(ghostInline(line, text.length, r.rest));
+        else if (r.state === 'joined') {
+            P.marks.push(editor.markText(CodeMirror.Pos(line, r.at), CodeMirror.Pos(line, text.length), { className: 'cm-ghost-wrong' }));
+            P.marks.push(editor.addLineWidget(line, ghostBlock([], 'ghost-wrong', '✖ Two lines have joined together! Click just before the red bit and press Enter to split them.')));
+        } else if (r.state === 'wrong') {
+            if (r.at < text.length) P.marks.push(editor.markText(CodeMirror.Pos(line, r.at), CodeMirror.Pos(line, mistakeEnd(text, r.at)), { className: 'cm-ghost-wrong' }));
+            let from = r.at;
+            while (from > 0 && /\w/.test(text[from - 1])) from--;           // the whole word, e.g. codeName
+            const typo = text.slice(from, mistakeEnd(text, r.at)).match(/\w+/)?.[0] ?? '';
+            const right = P.plain[k].match(/\w+/g)?.find(w => w !== typo && w.toLowerCase() === typo.toLowerCase());
+            P.marks.push(editor.addLineWidget(line, ghostBlock([P.plain[k]], 'ghost-wrong', onlyCapitals(text, P.lines[k])
+                ? `✖ Watch the capital letters! To Python, ${right ? `${typo} and ${right}` : 'Print and print'} are different words. It should be:`
+                : '✖ Not quite. Check the red bit. It should be:')));
+        }
+    }
+    // Lines they haven't started yet: under the last one they've typed, on an empty line, or at the end
+    if (left.length) {
+        const lastTyped = Math.max(-1, ...rows.map(x => x.end ?? x.line), ...extra.map(x => x.line));
+        const empty = [...Array(editor.lastLine() - start + 1)].map((_, i) => start + i)
+            .find(d => !editor.getLine(d).trim() && d > lastTyped);
+        if (lastTyped >= 0 && (empty == null || empty > lastTyped + 1)) {
+            P.marks.push(editor.addLineWidget(lastTyped, ghostBlock(left, 'ghost-lines')));
+        } else if (empty != null) {
+            P.marks.push(ghostInline(empty, 0, left[0]));
+            if (left.length > 1) P.marks.push(editor.addLineWidget(empty, ghostBlock(left.slice(1), 'ghost-lines')));
+        } else {
+            P.marks.push(editor.addLineWidget(editor.lastLine(), ghostBlock(left, 'ghost-lines', '↵ Press Enter for a new line, then type:')));
+        }
+    }
+    coach('ghost');
+}
+
+// The "Really stuck?" button: type the rest for them, from the first line that isn't right yet
+function typeForMe() {
+    const P = S?.practice;
+    if (!P) return;
+    // Lines in the wrong place go first (bottom up, so the line numbers above don't move)
+    for (const x of practiceLayout().extra.reverse()) editor.replaceRange('', CodeMirror.Pos(x.line, 0), CodeMirror.Pos(x.line + 1, 0));
+    const { start, rows } = practiceLayout();
+    const bad = rows.find(x => x.r.state !== 'done');
+    const k = bad ? bad.k : rows.length;
+    const from = bad ? bad.line : rows.length ? rows[rows.length - 1].line + 1 : start;
+    const rest = P.plain.slice(k).join('\n') + '\n';
+    if (from > editor.lastLine()) editor.replaceRange('\n' + rest, CodeMirror.Pos(editor.lastLine()));
+    else editor.replaceRange(rest, CodeMirror.Pos(from, 0), CodeMirror.Pos(editor.lastLine()));
+    editor.focus();
+    editor.setCursor(editor.lastLine(), 0);
+    updateGhost();
+}
+
+// One line at a time is coloured to show an error (red) or a tip (purple)
+let errorLine = null;
+function markErrorLine(n, cls = 'cm-error-line') {
+    clearErrorLine();
+    errorLine = { handle: editor.addLineClass(n - 1, 'background', cls), cls };
+}
+const markTipLine = n => markErrorLine(n, 'cm-tip-line');
 function clearErrorLine() {
-    if (errorLine) editor.removeLineClass(errorLine, 'background', 'cm-error-line');
+    if (errorLine) editor.removeLineClass(errorLine.handle, 'background', errorLine.cls);
     errorLine = null;
 }
 
@@ -447,13 +668,15 @@ function checkMissions(e) {
 
 function completeMission(m) {
     S.done.add(m.id);
+    S.stuck = S.errRepeat = 0;
+    if (S.practice?.id === m.id) stopPractice();
     if (!m.final) {
         // An objective with evidence finishes once its answers are recorded (see saveEvidence)
         const needsEvidence = evidenceNeeded(m).length > 0;
-        let msg = `\n${C.yellow}${C.b}★ ${needsEvidence ? 'YOUR CODE WORKED' : 'OBJECTIVE COMPLETE'}: ${m.title}${C.r}`;
-        if (m.clue) msg += `\n${C.cyan}  ↳ ${m.clue}${C.r}`;
+        let msg = `\n${C.green}${C.b}★ ${needsEvidence ? 'YOUR CODE WORKED' : 'OBJECTIVE COMPLETE'}: ${m.title}${C.r}`;
+        if (m.clue) msg += `\n${C.green}  ↳ ${m.clue}${C.r}`;
         if (needsEvidence) {
-            msg += `\n${C.cyan}  📝 Type what you found into the Objectives panel → to unlock the next objective${C.r}`;
+            msg += `\n${C.green}  📝 Type what you found into the Objectives panel → to unlock the next objective${C.r}`;
             showTab('mission');
             setTimeout(() => $('#mission [data-ev-input]')?.focus(), 50);
         }
@@ -499,19 +722,29 @@ function submitAnswer(id, value) {
         res = 'ok';
         S.evOk.add(id);
         S.evAns[id] = typed;
-        // Every main answer in closes the case; late bonus answers still add XP
-        const bonusOk = S.c.evidence.filter(x => x.bonus && S.evOk.has(x.id)).length;
-        if (S.c.evidence.every(x => x.bonus || S.evOk.has(x.id))) {
-            if (!S.solved) solve(bonusOk);
-            else recordResult(bonusOk);
-        }
+        // A main answer shows a "Correct!" card first; its button moves on (and closes the case
+        // once every main answer is in). Late bonus answers still add XP.
+        if (S.solved) recordResult(bonusCount());
+        else if (!f.bonus) { S.celebrate = id; confetti(30); }
     } else {
         S.evTip[id] = '💡 ' + (f.tips?.[v] || f.tip);
+        S.evWrong = id;
     }
     saveCaseState();
     renderCasePanel();
     renderBonus();
     return res;
+}
+
+const bonusCount = () => S.c.evidence.filter(x => x.bonus && S.evOk.has(x.id)).length;
+
+// The button on the "Correct!" card
+function continueOn() {
+    S.celebrate = null;
+    if (!S.solved && S.c.evidence.every(x => x.bonus || S.evOk.has(x.id))) solve(bonusCount());
+    renderCasePanel(true);
+    const input = $('#mission [data-ev-input]');
+    if (input) input.focus(); else editor.focus();
 }
 
 // Save the best result for this case; returns XP earned this time
@@ -570,7 +803,18 @@ function renderCasePanel(animateLearned) {
         ? `<div class="card learned"${animateLearned ? '' : ' style="animation:none"'}><b>✅ Objective ${ms.indexOf(L) + 1} · you learned:</b><p>${L.learn}</p></div>` : '';
 
     const cur = currentMission();
-    if (!cur) {
+    if (S.celebrate) {
+        const f = S.c.evidence.find(x => x.id === S.celebrate);
+        const closing = !S.solved && S.c.evidence.every(x => x.bonus || S.evOk.has(x.id));
+        $('#mission').innerHTML = `<div class="card mission celebrate">
+            <div class="tick">✔</div>
+            <h2>Correct! Well done, Detective!</h2>
+            <p>${cleanLabel(f)}</p>
+            <p class="answer">${escapeHtml(S.evAns[f.id])}</p>
+            <p class="small">🗂 It's on your Evidence Board now.</p>
+            <button class="primary" data-continue>${closing ? '🎉 Close the case!' : cur && pendingEvidence(cur).length ? 'Next question →' : 'Next objective →'}</button>
+        </div>`;
+    } else if (!cur) {
         $('#mission').innerHTML = `<div class="card mission"><div class="eyebrow">CASE CLOSED</div>
             <h2>🎉 Brilliant work, Detective!</h2>
             <p>Try the <a href="#" data-tab="bonus">🏆 bonus challenges</a>, keep experimenting with your code, or head back to the <a href="#/">case board</a> for your next case.</p></div>`;
@@ -591,13 +835,19 @@ function renderCasePanel(animateLearned) {
             <h2>${cur.title}</h2>
             <p>${cur.story}</p>
             <div class="task"><span class="task-label">YOUR TASK</span>${cur.task}</div>
-            ${cur.data ? `<div class="try"><span class="small">📋 Click to add this to your code:</span>
-                <button class="chip cmd" data-code="${escapeHtml(cur.data)}"><pre>${escapeHtml(cur.data)}</pre></button></div>` : ''}
-            ${cur.tools?.length ? `<div class="row"><span class="small">🧰 Useful Python:</span>${cur.tools.map(t =>
-                `<button class="chip" data-ref="${escapeHtml(t)}" title="Click to read about ${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('')}</div>` : ''}
+            ${cur.data && cur.typeIt ? `<div class="try"><span class="small">📋 We've added this to the bottom of your code for you:</span>
+                ${snippetHtml(cur.data, { click: false, open: false })}</div>`
+            : cur.data ? `<div class="try"><span class="small">📋 You'll need this. Click it to add it to your code:</span>
+                ${snippetHtml(cur.data)}</div>` : ''}
+            ${cur.typeIt ? `<div class="try"><div class="type-label">✍️ TYPE THIS INTO THE EDITOR</div>
+                ${snippetHtml(plainCode(cur.typeIt), { click: false, open: true })}
+                <p class="small">The grey <b>ghost code</b> in the editor shows you what to type. Typing it yourself is the best way to remember it!</p>
+                ${S.stuck >= 2 || lvl >= cur.hints.length ? '<button class="link-btn" data-type-for-me>😵 Really stuck? Type it in for me</button>' : ''}</div>` : ''}
+            ${cur.tools?.length ? `<div class="row"><span class="small">📖 Click to read about:</span>${cur.tools.map(t =>
+                `<button class="chip" data-ref="${escapeHtml(t)}" title="Click to read about ${escapeHtml(t)} in the output panel">📖 ${escapeHtml(t)}</button>`).join('')}</div>` : ''}
             ${lvl ? `<ul class="hints">${cur.hints.slice(0, lvl).map(h => `<li>💡 ${h}</li>`).join('')}</ul>` : ''}
-            ${showTry && cur.try?.length ? `<div class="try"><span class="small">Click to add it to your code, then press <kbd>▶ Run</kbd>:</span>
-                ${cur.try.map(c => `<button class="chip cmd" data-code="${escapeHtml(c)}"><pre>${escapeHtml(c)}</pre></button>`).join('')}</div>` : ''}
+            ${showTry && !cur.typeIt && cur.try?.length ? `<div class="try"><span class="small">💡 Here's some code that does it. Click it to add it to your code, read what each line does, then press <kbd>▶ Run</kbd>:</span>
+                ${cur.try.map(c => snippetHtml(c)).join('')}</div>` : ''}
             ${lvl < cur.hints.length ? `<button class="hint-btn" data-hint>💡 ${lvl ? 'Another hint' : 'Need a hint?'} <span>(${cur.hints.length - lvl} left${hintCostText()})</span></button>` : ''}
         </div>`;
         });
@@ -607,7 +857,33 @@ function renderCasePanel(animateLearned) {
     $('#found').innerHTML = found.length ? `<div class="found"><b>🗂 Evidence Board</b><ul>${found.map(f =>
         `<li>${f.bonus ? '⭐ ' : ''}${cleanLabel(f)} <span>${escapeHtml(S.evAns[f.id])}</span></li>`).join('')}</ul></div>` : '';
 
-    renderTaskBar(cur);
+    highlightCode($('#mission'));
+    highlightCode($('#learned'));
+    S.evWrong = null;
+
+    // Something new in the objective panel (next objective, evidence, "Correct!"): start it at the top
+    const panelKey = `${cur?.id}:${S.celebrate}:${cur ? pendingEvidence(cur).length > 0 : ''}`;
+    if (S.panelKey !== panelKey) { S.panelKey = panelKey; $('.tab-body').scrollTop = 0; }
+    // Moved on to a new objective: flash it, and the first few times point it out
+    if (cur && !S.celebrate && S.panelMission !== cur.id) {
+        if (S.panelMission) {
+            $('#mission .mission')?.classList.add('fresh');
+            if (!S.solved) coach('next');
+        }
+        S.panelMission = cur.id;
+    }
+
+    // Ghost code while the current objective is waiting to be typed
+    const typing = !S.celebrate && cur?.typeIt && !S.done.has(cur.id);
+    if (typing && S.practice?.id !== cur.id) {
+        startPractice(cur, S.resume?.id === cur.id ? S.resume.line : null);
+        saveCaseState();
+    } else if (!typing) stopPractice();
+    S.resume = null;
+
+    // First-time tips for things that have just appeared
+    if ($('#mission .ev-ask')) coach('evidence');
+    if ($('#mission .snip-code')) coach('click');
 
     // Compact progress dots: click a finished one to re-read what it taught
     $('#steps').innerHTML = ms.map((m, i) => {
@@ -626,21 +902,21 @@ function pendingEvidence(cur) {
 
 // One evidence question with its answer box. `where` keeps the ids unique per panel
 function evQuestionHtml(f, where, canSkip) {
-    return `<div class="ev-q">
+    return `<div class="ev-q${S.evTip[f.id] ? ' tried' : ''}${S.evWrong === f.id ? ' wrong' : ''}">
         <label for="${where}-${f.id}">${f.bonus ? '⭐ BONUS: ' : ''}${cleanLabel(f)}</label>
         <span class="ev-q-row">
             <input id="${where}-${f.id}" data-ev-input="${f.id}" placeholder="${escapeHtml(f.ph || '')}" autocomplete="off" spellcheck="false">
             <button class="tb-btn run" data-ev-save="${f.id}">✔ Check</button>
             ${canSkip ? `<button class="tb-btn" data-ev-skip="${f.id}" title="Bonus questions are optional">Skip</button>` : ''}
         </span>
-        ${S.evTip[f.id] ? `<div class="ev-tip">${escapeHtml(S.evTip[f.id])}</div>` : ''}
+        ${S.evTip[f.id] ? `<div class="ev-no">✖ Not quite. Have another look.</div><div class="ev-tip">${escapeHtml(S.evTip[f.id])}</div>` : ''}
     </div>`;
 }
 
 function evidenceAskHtml(cur, fields) {
     return `<div class="ev-ask">
         <div class="eyebrow">📝 RECORD YOUR EVIDENCE</div>
-        <p>${cur.final ? 'Answer these to close the case.' : '✅ Your code worked! Look at your output and type what you found to unlock the next objective.'}</p>
+        <p>${cur.final ? 'Answer these to close the case.' : '✅ Your code worked! Look at the <b>Output panel</b> to find the answer, type it in the box, then press <b>✔ Check</b>.'}</p>
         ${fields.map(f => evQuestionHtml(f, 'tbin', f.bonus)).join('')}
     </div>`;
 }
@@ -657,40 +933,9 @@ function keepTyped(panel, draw) {
 function saveEvidence(input) {
     const panel = input.closest('[data-panel]');
     const res = submitAnswer(input.dataset.evInput, input.value);
-    if (res === 'ok' && !S.solved) toast('🗂 Evidence recorded!');
-    if (res !== 'empty') panel.querySelector('[data-ev-input]')?.focus();
-}
-
-// A short copy of the current objective, right above the editor
-function renderTaskBar(cur) {
-    const bar = $('#task-bar'), ms = S.c.missions;
-    const fields = cur ? pendingEvidence(cur) : [];
-    const key = cur ? cur.id + (fields.length ? ':evidence' : '') : 'closed';
-    if (!cur) {
-        bar.innerHTML = `<div class="tb-main"><div class="eyebrow">🎉 CASE CLOSED</div>
-            <div class="tb-task">Brilliant work, Detective! Try the <a href="#" data-tab="bonus">🏆 bonus challenges</a> or head back to the <a href="#/">case board</a>.</div></div>`;
-    } else {
-        const lvl = S.hintLevel[cur.id] || 0;
-        bar.innerHTML = `<div class="tb-main">
-                <div class="eyebrow">🎯 OBJECTIVE ${ms.indexOf(cur) + 1} OF ${ms.length}<b>${cur.title}</b></div>
-                <div class="tb-task">${fields.length
-                    ? `📝 ${cur.final ? 'Answer' : 'Your code worked! Now type'} what you found in the <a href="#" data-tab="mission">Objectives panel →</a> ${cur.final ? 'to close the case' : 'to unlock the next objective'}.`
-                    : cur.task}</div>
-                ${lvl ? `<div class="tb-hint">💡 ${cur.hints[lvl - 1]}</div>` : ''}
-            </div>
-            <div class="tb-side">
-                ${lvl < cur.hints.length ? `<button class="hint-btn" data-hint>💡 ${lvl ? 'Another hint' : 'Hint'}</button>` : ''}
-                <button class="chip" data-tab="mission" title="Read the whole objective on the right">📜 Details</button>
-                <button class="chip" data-briefing title="Read the case story again">📁 Briefing</button>
-            </div>`;
-    }
-    // Flash it when a new objective appears
-    if (bar.dataset.key !== key) {
-        bar.dataset.key = key;
-        bar.classList.remove('new');
-        void bar.offsetWidth;
-        bar.classList.add('new');
-    }
+    if (res === 'ok' && panel.dataset.panel === 'bonus') toast('⭐ Correct! Bonus XP earned');
+    if (res === 'ok' && S.celebrate) $('#mission [data-continue]')?.focus();
+    else if (res !== 'empty') panel.querySelector('[data-ev-input]')?.focus();
 }
 
 function showTab(name) {
@@ -700,16 +945,66 @@ function showTab(name) {
 }
 
 function renderCheats() {
-    $('#cheats').innerHTML = Object.entries(PYREF).map(([name, r]) =>
-        `<div class="cheat"><button class="chip ref" data-ref="${escapeHtml(name)}" title="Read about ${escapeHtml(name)}">${escapeHtml(name)}</button><span class="small">${r.desc}</span>
-         <button class="chip cmd" data-code="${escapeHtml(r.ex)}" title="Click to add it to your code"><pre>${escapeHtml(r.ex)}</pre></button></div>`
-    ).join('') + '<p class="small">Click a name to read about it in the output panel, or click an example to add it to your code.</p>';
+    $('#cheats').innerHTML = '<p class="small" style="margin-top:0">Every Python command used in the cases. Click a 📖 name to read more about it in the output panel, or click a glowing example to add it to your code.</p>' +
+        Object.entries(PYREF).map(([name, r]) =>
+        `<div class="cheat"><button class="chip ref" data-ref="${escapeHtml(name)}" title="Read about ${escapeHtml(name)}">📖 ${escapeHtml(name)}</button><span class="small">${r.desc}</span>
+         ${snippetHtml(r.ex, { open: false })}</div>`
+    ).join('');
+    highlightCode($('#cheats'));
+}
+
+// Colour some Python exactly like the editor does. Returns one HTML string per line
+function highlightLines(code) {
+    const lines = code.split('\n').map(() => '');
+    if (!window.CodeMirror?.runMode) return code.split('\n').map(escapeHtml);
+    CodeMirror.runMode(code, 'python', (text, style, line) => {
+        if (line == null) return;            // the line break between lines
+        const html = escapeHtml(text);
+        lines[line] += style ? `<span class="${style.split(' ').map(s => 'cm-' + s).join(' ')}">${html}</span>` : html;
+    });
+    return lines;
+}
+
+// Give every <code> inside el the editor's colours, so "text in quotes" is the same yellow everywhere
+function highlightCode(el) {
+    el.querySelectorAll('code:not(.hl)').forEach(c => {
+        c.innerHTML = highlightLines(c.textContent).join('\n');
+        c.classList.add('hl', 'cm-s-detective');
+    });
+}
+
+// A glowing, clickable piece of code with a numbered "What does each line do?" underneath.
+// Explanations are open to start with on easy cases.
+function snippetHtml(code, { open = S?.c.difficulty === 'easy', click = true } = {}) {
+    const lines = highlightLines(code);
+    const steps = explainSnippet(code, S?.c.explain);
+    const numbered = steps.length > 1 || code.includes('\n');
+    const pre = `<pre>${lines.map((l, i) => `${numbered ? `<span class="snip-ln">${i + 1}</span>` : ''}${l}`).join('\n')}</pre>`;
+    return `<div class="snippet">
+        ${click ? `<button class="snip-code cm-s-detective" data-code="${escapeHtml(code)}" title="Click to add this code to the end of yours">
+            <span class="snip-add">＋ Add to my code</span>${pre}
+        </button>` : `<div class="snip-code static cm-s-detective">${pre}</div>`}
+        <details class="snip-explain"${open ? ' open' : ''}>
+            <summary>🔍 What does ${numbered ? 'each line' : 'this'} do?</summary>
+            <ol>${steps.map(s => `<li>${numbered ? `<span class="snip-ln">${s.from === s.to ? s.from : `${s.from}–${s.to}`}</span>` : ''}<span>${s.html || 'Try running it and see what happens!'}</span></li>`).join('')}</ol>
+        </details>
+    </div>`;
+}
+
+// Flash a snippet when it's been added, so it's obvious something happened
+function snippetAdded(btn) {
+    btn.classList.add('added');
+    btn.querySelector('.snip-add').textContent = '✔ Added to your code!';
+    setTimeout(() => {
+        btn.classList.remove('added');
+        btn.querySelector('.snip-add').textContent = '＋ Add to my code';
+    }, 1600);
 }
 
 function printRef(name) {
     const r = PYREF[name];
     if (!r) return;
-    print(`\n${C.b}${C.cyan}📖 ${name}${C.r}${C.dim}: ${r.desc}${C.r}\n${r.man}\n`);
+    print(`\n${C.b}${C.green}📖 ${name}: ${r.desc}${C.r}\n${C.green}${r.man}${C.r}\n`);
 }
 
 function renderBonus() {
@@ -724,8 +1019,9 @@ function renderBonus() {
                 : evQuestionHtml(f, 'bnin', false)).join('')}
         </div>` : '') +
         b.map((x, i) => `<div class="bonus-item"><b>${i + 1}. ${x.title}</b> ${x.text}
-            ${x.code ? `<button class="chip cmd" data-code="${escapeHtml(x.code)}"><pre>${escapeHtml(x.code)}</pre></button>` : ''}</div>`).join('');
+            ${x.code ? snippetHtml(x.code) : ''}</div>`).join('');
     });
+    highlightCode($('#bonus'));
 }
 
 function asciiBox(lines, width) {
@@ -748,9 +1044,9 @@ function toast(msg) {
     setTimeout(() => el.remove(), 3300);
 }
 
-function confetti() {
+function confetti(pieces = 90) {
     const colours = ['#39ff88', '#4fd1ff', '#ffc94d', '#ff5c7a', '#b48cff'];
-    for (let i = 0; i < 90; i++) {
+    for (let i = 0; i < pieces; i++) {
         const c = document.createElement('div');
         c.className = 'confetti';
         c.style.left = Math.random() * 100 + 'vw';
@@ -760,6 +1056,124 @@ function confetti() {
         document.body.appendChild(c);
         setTimeout(() => c.remove(), 5500);
     }
+}
+
+// =====================================================================
+//  The tour, and first-time tips
+//  The tour is a few steps the first time a case opens. Tips (TIPS) show
+//  once each, the first time something new appears. Each step lights up
+//  the first of its targets that's showing (a selector or a function).
+// =====================================================================
+const TOUR = [
+    { target: ['.editor-window'], title: '📝 The code editor',
+      body: '<p>This is where you write <b>code</b>: instructions for the computer, in a language called <b>Python</b>.</p>' },
+    { target: ['#run-btn'], title: '▶ The Run button',
+      body: '<p>Python only follows your code when you press <b>Run</b>.</p>' },
+    { target: ['.console-window'], title: '🖥 The Output panel',
+      body: '<p>When your code <b>prints</b> something, it shows up here.</p>' },
+    { target: ['aside'], title: '🎯 Your mission',
+      body: '<p>This tells you what to do next. <b>Start here!</b></p>' }
+];
+
+// times: how many times a tip is shown (once if not given)
+const TIPS = {
+    next: { target: ['#mission .mission'], title: '🎯 New objective!', times: 3,
+      body: '<p>✔ You finished that objective! This panel now shows your <b>next one</b>.</p><p>Read it to find out what to do next.</p>' },
+    ghost: { target: [() => $('.cm-ghost')?.closest('.CodeMirror-line'), () => $('.ghost-lines'), '.editor-window'], title: '👻 Ghost code',
+      body: '<p>The <b>grey code</b> in the editor shows you what to type.</p><p>Type it in yourself, letter by letter. It turns into real code as you go!</p>' },
+    click: { target: ['#mission .snip-code:not(.static)'], title: '✨ Glowing code',
+      body: '<p>Code that <b>glows</b> can be clicked. Clicking adds it to the end of your code.</p>' },
+    evidence: { target: ['#mission .ev-ask'], title: '📝 You found a clue!',
+      body: '<p>Look at the <b>Output panel</b> to find the answer. Type it in this box, then press <b>✔ Check</b>.</p>' },
+    error: { target: ['.console-window'], title: '🟥 An error!',
+      body: '<p>Red means Python got stuck. It tells you <b>which line</b>, and the <b>purple tip</b> says how to fix it.</p><p>Don\'t worry: every coder gets errors!</p>' },
+    stuck: { target: ['#mission [data-hint]', '#mission [data-type-for-me]', '#mission'], title: '💡 Need a hand?',
+      body: '<p>Press here for a hint. Each press gives you a bit more help.</p>' }
+};
+
+let tour = null;               // { steps, at, tip } while the tour or a tip is showing
+const tipQueue = [];
+
+function startTour() {
+    if (!S) return;
+    closeBriefing();
+    showTab('mission');
+    tour = { steps: TOUR, at: 0 };
+    $('#tour').hidden = false;
+    showTourStep();
+}
+
+// Show a tip the first time its moment comes (after the tour and any open window)
+const tipDone = id => (progress.seen?.[id] || 0) >= (TIPS[id].times || 1);     // seen counts showings (true = once)
+
+function coach(id) {
+    if (!S || tipDone(id) || tipQueue.includes(id)) return;
+    tipQueue.push(id);
+    setTimeout(nextTip, 400);
+}
+
+function nextTip() {
+    if (tour || !S || !tipQueue.length) return;
+    if (!progress.toured || $('#briefing').classList.contains('show') || $('#modal').classList.contains('show')) return;
+    const id = tipQueue.shift();
+    if (tipDone(id)) return nextTip();
+    const step = TIPS[id];
+    if (!findTarget(step)) return nextTip();       // the moment's passed
+    tour = { steps: [step], at: 0, tip: id };
+    $('#tour').hidden = false;
+    showTourStep();
+}
+
+function endTour() {
+    $('#tour').hidden = true;
+    if (tour?.tip) progress.seen = { ...progress.seen, [tour.tip]: (+progress.seen?.[tour.tip] || 0) + 1 };
+    else progress.toured = true;
+    tour = null;
+    saveProgress(progress);
+    editor?.focus();
+    setTimeout(nextTip, 300);
+}
+
+const findTarget = step => (step.target || []).map(t => typeof t === 'function' ? t() : $(t)).find(el => el && el.offsetParent);
+
+function showTourStep() {
+    const step = tour.steps[tour.at], last = tour.at === tour.steps.length - 1;
+    const target = findTarget(step);
+    $('#tour-step').textContent = tour.tip ? '✨ NEW!' : `${tour.at + 1} OF ${tour.steps.length}`;
+    $('#tour-title').textContent = step.title;
+    $('#tour-body').innerHTML = step.body;
+    highlightCode($('#tour-body'));
+    $('#tour-back').hidden = tour.at === 0;
+    $('#tour-skip').hidden = !!tour.tip;
+    $('#tour-next').textContent = tour.tip ? 'Got it! 👍' : last ? '🔍 Let\'s go!' : 'Next →';
+    target?.scrollIntoView({ block: 'nearest' });
+    placeTour(target);
+    $('#tour-next').focus();
+}
+
+// Put the spotlight on the target and the card next to it, wherever there's room
+function placeTour(target) {
+    const spot = $('#tour-spot'), card = $('#tour-card');
+    const vw = innerWidth, vh = innerHeight, gap = 14;
+    const cw = card.offsetWidth, ch = card.offsetHeight;
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(v, hi));
+    spot.classList.toggle('none', !target);
+    if (!target) {
+        Object.assign(spot.style, { left: vw / 2 + 'px', top: vh / 2 + 'px', width: '0px', height: '0px' });
+        Object.assign(card.style, { left: (vw - cw) / 2 + 'px', top: (vh - ch) / 2 + 'px' });
+        return;
+    }
+    const r = target.getBoundingClientRect(), pad = 6;
+    Object.assign(spot.style, { left: r.left - pad + 'px', top: r.top - pad + 'px', width: r.width + pad * 2 + 'px', height: r.height + pad * 2 + 'px' });
+    const spots = [
+        [r.bottom + gap + ch < vh, () => [clamp(r.left, gap, vw - cw - gap), r.bottom + gap]],
+        [r.top - gap - ch > 0, () => [clamp(r.left, gap, vw - cw - gap), r.top - gap - ch]],
+        [r.left - gap - cw > 0, () => [r.left - gap - cw, clamp(r.top, gap, vh - ch - gap)]],
+        [r.right + gap + cw < vw, () => [r.right + gap, clamp(r.top, gap, vh - ch - gap)]],
+        [true, () => [clamp(r.left + (r.width - cw) / 2, gap, vw - cw - gap), clamp(r.bottom - ch - gap * 2, gap, vh - ch - gap)]]
+    ];
+    const [left, top] = spots.find(([fits]) => fits)[1]();
+    Object.assign(card.style, { left: left + 'px', top: top + 'px' });
 }
 
 // =====================================================================
@@ -806,6 +1220,8 @@ function caseCard(c) {
 // =====================================================================
 function showBoard() {
     if (S?.running) pyStop('left');
+    if (tour) endTour();
+    stopPractice();
     S = null;
     $('#modal').classList.remove('show');
     $('#case-view').hidden = true;
@@ -818,6 +1234,7 @@ function showBoard() {
 
 function openCase(c) {
     if (S?.running) pyStop('left');
+    stopPractice();
     $('#board-view').hidden = true;
     $('#hdr-board').hidden = true;
     $('#case-view').hidden = false;
@@ -837,6 +1254,7 @@ function openCase(c) {
         S.hintsUsed = saved.hintsUsed || 0;
         S.solved = !!saved.solved;
         S.evSkip = new Set(saved.skipped || []);
+        S.resume = saved.practice;
         for (const f of c.evidence) {
             const v = saved.answers?.[f.id];
             if (v && f.check(v.trim().toLowerCase())) { S.evOk.add(f.id); S.evAns[f.id] = v; }
@@ -866,15 +1284,19 @@ function openCase(c) {
     print([
         ...asciiBox([c.title.toUpperCase().split('').join(' ').slice(0, 44), `${DIFFICULTIES[c.difficulty].label} CASE · ${c.xp} XP`], 46),
         '',
-        `  ${C.dim}Your current objective is above the code${C.r} ${C.cyan}↑${C.r}${C.dim}, with the full story on the right${C.r} ${C.cyan}→${C.r}`,
-        `  ${C.dim}Write Python in the editor above, then press${C.r} ${C.green}▶ Run${C.r} ${C.dim}(or Ctrl+Enter).${C.r}`,
-        `  ${C.dim}Stuck? Press${C.r} ${C.magenta}💡 Need a hint?${C.r}${hintNote}`,
-        ...(S.done.size ? ['', `  ${C.green}Welcome back! ${S.done.size}/${c.missions.length} objectives already done.${C.r} ${C.dim}(↻ Restart to start again)${C.r}`] : []),
+        `${C.green}  This is the OUTPUT panel. When you press ▶ Run, anything your`,
+        `  code prints appears down here in white.`,
+        ``,
+        `  Your objective (what to do next) is in the panel on the right →${C.r}`,
+        `  ${C.magenta}Stuck? Press 💡 Need a hint? in that panel.${C.r}${hintNote}`,
+        ...(S.done.size ? ['', `  ${C.green}Welcome back! ${S.done.size}/${c.missions.length} objectives already done. (↻ Restart to start again)${C.r}`] : []),
         ''
     ].join('\n'));
     setTimeout(() => { fit(); editor.refresh(); editor.focus(); }, 30);
-    $('#briefing').classList.toggle('show', !S.done.size && !S.solved);
-    if (!S.done.size && !S.solved) setTimeout(() => $('#briefing-go').focus(), 40);
+    const fresh = !S.done.size && !S.solved;
+    $('#briefing').classList.toggle('show', fresh);
+    if (fresh) setTimeout(() => $('#briefing-go').focus(), 40);
+    else if (!progress.toured) setTimeout(startTour, 60);
 }
 
 function route() {
@@ -899,7 +1321,7 @@ document.addEventListener('click', e => {
         return;
     }
     const code = e.target.closest('[data-code]');
-    if (code) { insertCode(code.dataset.code); return; }
+    if (code) { insertCode(code.dataset.code); snippetAdded(code); return; }
     const ref = e.target.closest('[data-ref]');
     if (ref) { printRef(ref.dataset.ref); return; }
     const tab = e.target.closest('[data-tab]');
@@ -912,6 +1334,8 @@ document.addEventListener('click', e => {
     }
     if (e.target.closest('[data-hint]')) revealHint();
     if (e.target.closest('[data-briefing]')) showBriefing();
+    if (e.target.closest('[data-continue]') && S) { continueOn(); return; }
+    if (e.target.closest('[data-type-for-me]') && S) { typeForMe(); return; }
     const save = e.target.closest('[data-ev-save]');
     if (save && S) saveEvidence(save.closest('.ev-q').querySelector('[data-ev-input]'));
     const skip = e.target.closest('[data-ev-skip]');
@@ -922,24 +1346,52 @@ $('#stop-btn').addEventListener('click', () => { if (S?.running) pyStop('button'
 $('#clear-btn').addEventListener('click', () => term && clearConsole());
 $('#reset-code').addEventListener('click', () => {
     if (S && confirm('Throw away your code and go back to the starting code for this case?')) {
+        stopPractice();
         editor.setValue(S.c.starter || '');
         saveDraft(S.c, editor.getValue());
+        renderCasePanel();
     }
 });
-$('#briefing-go').addEventListener('click', closeBriefing);
+// The very first time, the tour follows the briefing
+function briefingDone() {
+    closeBriefing();
+    if (!progress.toured) startTour();
+    else setTimeout(nextTip, 300);
+}
+$('#briefing-go').addEventListener('click', briefingDone);
 document.addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.target.dataset?.evInput && S) saveEvidence(e.target);
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#briefing').classList.contains('show')) closeBriefing(); });
-$('#modal-close').addEventListener('click', () => { $('#modal').classList.remove('show'); editor.focus(); });
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && tour) endTour();
+    else if (e.key === 'Escape' && $('#briefing').classList.contains('show')) briefingDone();
+});
+$('#tour-btn').addEventListener('click', startTour);
+$('#tour-skip').addEventListener('click', endTour);
+$('#tour-back').addEventListener('click', () => { tour.at--; showTourStep(); });
+$('#tour-next').addEventListener('click', () => {
+    if (++tour.at < tour.steps.length) showTourStep();
+    else endTour();
+});
+window.addEventListener('resize', () => { if (tour) showTourStep(); });
+$('#modal-close').addEventListener('click', () => { $('#modal').classList.remove('show'); editor.focus(); setTimeout(nextTip, 300); });
 $('#restart').addEventListener('click', () => {
-    if (S && confirm('Start this case again from the beginning? (Your code is kept.)')) { clearCaseState(S.c); openCase(S.c); }
+    if (S && confirm('Start this case again from the beginning? Your code will go back to the starting code.')) {
+        clearCaseState(S.c);
+        clearDraft(S.c);
+        openCase(S.c);
+    }
 });
 $('#font-inc').addEventListener('click', () => setFontSize(Math.min(26, term.options.fontSize + 1)));
 $('#font-dec').addEventListener('click', () => setFontSize(Math.max(10, term.options.fontSize - 1)));
 $('#teacher-toggle').addEventListener('click', () => { progress.teacher = !progress.teacher; saveProgress(progress); renderBoard(); });
 $('#reset-progress').addEventListener('click', () => {
-    if (confirm('Forget all solved cases and XP?')) { progress = { solved: {}, teacher: progress.teacher }; saveProgress(progress); CASES.forEach(clearCaseState); renderBoard(); }
+    if (confirm('Forget all solved cases, XP and code, and start again from the beginning?')) {
+        progress = { solved: {}, teacher: progress.teacher };
+        saveProgress(progress);
+        CASES.forEach(c => { clearCaseState(c); clearDraft(c); });
+        renderBoard();
+    }
 });
 window.addEventListener('hashchange', route);
 

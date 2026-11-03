@@ -60,9 +60,9 @@ CASES.push({
         'import os',
         'print(os.listdir("messages"))',
         '',
-        'with open("messages/msg1.txt") as f:',
-        '    text = f.read().strip()',
-        'print(text)',
+        'with open("messages/msg1.txt") as file:',
+        '    message = file.read().strip()',
+        'print(message)',
         ''
     ].join('\n'),
     files: {
@@ -93,63 +93,84 @@ CASES.push({
         [`${DIR}/msg3.txt`]: MSG3 + '\n'
     },
 
+    // "What does each line do?" for lines the general explanations don't cover well
+    explain: {
+        'message = file.read().strip()': 'Reads the whole file into one string, <code>.strip()</code> trims the invisible "new line" character off the end, and the result goes into a variable called <code>message</code>.',
+        'print(message[::-1])': 'Shows <code>message</code> backwards. <code>[::-1]</code> is a slice: empty start and stop mean "all of it", and the step <code>-1</code> means "walk backwards".',
+        'print(message[::2])': 'Shows every 2nd character of <code>message</code>: characters 0, 2, 4 and so on. <code>[::2]</code> means "all of it, jumping 2 each time", which skips the junk letters.',
+        'first_letters = []': 'Makes an empty <b>list</b> called <code>first_letters</code>. The empty <code>[]</code> means there\'s nothing in it yet: the loop will fill it up.',
+        'for line in file:': 'A <b>loop</b> over the open file. Each time round, <code>line</code> holds the next line of the poem.',
+        'first_letters.append(line.strip()[0])': '<code>line.strip()</code> removes the spaces at the start (and the new line at the end). <code>[0]</code> takes the first character of what\'s left, and <code>.append()</code> adds it to the end of the list.',
+        'print("".join(first_letters))': 'Glues all the letters in <code>first_letters</code> into one word, with nothing (<code>""</code>) between them, and shows it.',
+        'message = file.read()': 'Reads the whole file into one long string, and stores it in a variable called <code>message</code>. No <code>.strip()</code> this time: the new line at the end isn\'t a capital, so the loop will skip it anyway.',
+        'capitals = ""': 'Makes a variable called <code>capitals</code> that holds empty text, <code>""</code>. The loop will add each capital letter it finds to the end.',
+        'for letter in message:': 'A <b>loop</b> over a string: it goes through <code>message</code> one character at a time, putting each one in <code>letter</code>. Spaces and commas count as characters too.',
+        'if letter.isupper():': 'Checks whether <code>letter</code> is a capital letter. <code>.isupper()</code> is True for capitals and False for everything else, including spaces.',
+        'capitals += letter': 'Sticks <code>letter</code> on the end of <code>capitals</code>. <code>+=</code> is a shortcut for <code>capitals = capitals + letter</code>.',
+        'print(capitals)': 'Shows all the capital letters that were found. It\'s not indented, so it runs once, after the loop has finished.',
+        'print(my_message[::-1])': 'Shows <code>my_message</code> backwards, using the <code>[::-1]</code> slice. Change the words in the quotes to write your own!',
+        'for word in ["racecar", "pier", "level", "kayak", "magpie"]:': 'A <b>loop</b> over a list of words, written straight into the line. Each time round, the next word is put in <code>word</code>.',
+        'print(word, word == word[::-1])': 'Shows the word, then <code>True</code> or <code>False</code>. <code>==</code> asks "are these the same?", so it checks whether the word is the same as itself backwards.'
+    },
+
     missions: [
         {
             id: 'reverse', title: 'Read it backwards', tutorial: true,
-            story: '<code>msg1.txt</code> starts with "!god tobor"... It\'s written <b>backwards</b>! You could try reading it in a mirror, or you could ask Python to flip it round in one go.',
+            story: '<code>msg1.txt</code> starts with "!god tobor"... It\'s written <b>backwards</b>! You could read it in a mirror, or you could ask Python to flip it round in one go.<br><br>Your starter code already reads the message into a variable called <code>message</code>. In the door log, <code>lines[:5]</code> was a <b>slice</b>: part of a list. Strings can be sliced too, and a slice can have three parts: <code>[start:stop:step]</code>. Leave start and stop empty to mean "all of it". The <b>step</b> is how far to move each time, and a step of <code>-1</code> walks backwards.',
             task: 'Read <code>messages/msg1.txt</code> and print it the right way round.',
             tools: ['slicing', 'strip'],
             hints: [
-                'A slice has three parts: <code>[start:stop:step]</code>. A step of <code>-1</code> walks backwards.',
-                '<code>text[::-1]</code> is the whole of <code>text</code>, backwards.'
+                'A slice has three parts: <code>[start:stop:step]</code>. Leave start and stop empty, and use a step of <code>-1</code> to walk backwards.',
+                '<code>message[::-1]</code> is the whole of <code>message</code>, backwards. Print that.'
             ],
-            try: ['with open("messages/msg1.txt") as f:\n    text = f.read().strip()\nprint(text[::-1])'],
-            learn: '<code>text[::-1]</code> reverses a string. Leaving start and stop empty means "all of it", and step <code>-1</code> means "go backwards".',
+            try: ['with open("messages/msg1.txt") as file:\n    message = file.read().strip()\nprint(message[::-1])'],
+            learn: '<code>message[::-1]</code> reverses a string. Empty start and stop mean "all of it", and step <code>-1</code> means "go backwards". <code>.strip()</code> removed the new line from the end of the file first, so the flipped message doesn\'t start with a blank line.',
             clue: 'Now you know when they\'re meeting. Add it to the Evidence Board →',
             evidence: ['when'],
             done: e => uses(e, /::\s*-\s*1/) && printed(e, PLAIN1)
         },
         {
             id: 'every-other', title: 'Ditch the junk letters',
-            story: 'Byte sniffed <code>msg2.txt</code> and sneezed. 🐕 It\'s full of junk! Look closely: the <b>real</b> letters are the 1st, 3rd, 5th, 7th... and a junk letter sits after each one.',
+            story: 'Byte sniffed <code>msg2.txt</code> and sneezed. 🐕 It\'s full of junk! Look closely: the <b>real</b> letters are the 1st, 3rd, 5th, 7th... and a junk letter sits after each one.<br><br>The step in a slice can fix this too. A step of <code>2</code> jumps two characters each time, so it lands on every other one and skips the junk.',
             task: 'Print only every <b>second</b> character of <code>msg2.txt</code>, starting with the first one.',
             tools: ['slicing'],
             hints: [
                 'In <code>[start:stop:step]</code>, the step is how far to jump each time.',
-                '<code>text[::2]</code> takes characters 0, 2, 4, 6...'
+                '<code>message[::2]</code> takes characters 0, 2, 4, 6... (Python counts from 0, so character 0 is the 1st one.)'
             ],
-            try: ['with open("messages/msg2.txt") as f:\n    text = f.read().strip()\nprint(text[::2])'],
-            learn: '<code>text[::2]</code> takes every 2nd character. <code>text[1::2]</code> would start from the second one instead.',
+            try: ['with open("messages/msg2.txt") as file:\n    message = file.read().strip()\nprint(message[::2])'],
+            learn: '<code>message[::2]</code> takes every 2nd character, starting from the first. <code>message[1::2]</code> would start from the second one instead, and give you only the junk.',
             done: e => uses(e, /:\s*2\s*\]/) && printed(e, PLAIN2)
         },
         {
             id: 'acrostic', title: 'The suspicious poem',
-            story: 'The message said: <i>the password is hidden in my poem. Read the first letter of every line.</i> Careful: some lines start with spaces!',
+            story: 'The message said: <i>the password is hidden in my poem. Read the first letter of every line.</i> Careful: some lines start with spaces!<br><br>You can collect the letters in a <b>list</b>, adding one at a time with <code>.append()</code>. At the end, <code>"".join(first_letters)</code> glues the list into one word. The <code>""</code> at the front is what goes <b>between</b> the letters: here, nothing at all.',
             task: 'Loop over the lines of <code>poem.txt</code>, collect the first letter of each line, and print them joined together as one word.',
             tools: ['for', 'strip', 'join'],
             hints: [
+                'You can loop straight over an open file: <code>for line in file:</code> gives you one line each time round.',
                 '<code>line.strip()</code> removes the spaces at the start, so <code>line.strip()[0]</code> is the first real letter.',
-                'Start with an empty list <code>letters = []</code> and <code>letters.append(...)</code> each first letter.',
-                '<code>"".join(letters)</code> glues a list of letters into one word.'
+                'Start with an empty list, <code>first_letters = []</code>, and <code>first_letters.append(...)</code> each first letter.',
+                '<code>"".join(first_letters)</code> glues a list of letters into one word.'
             ],
-            try: ['letters = []\nwith open("messages/poem.txt") as f:\n    for line in f:\n        letters.append(line.strip()[0])\nprint("".join(letters))'],
-            learn: '<code>"".join(letters)</code> joins a list of strings with nothing in between. <code>" ".join(...)</code> would put a space between each one.',
+            try: ['first_letters = []\nwith open("messages/poem.txt") as file:\n    for line in file:\n        first_letters.append(line.strip()[0])\nprint("".join(first_letters))'],
+            learn: '<code>"".join(first_letters)</code> joins a list of strings with nothing in between. <code>" ".join(...)</code> would put a space between each one. <code>join</code> is the opposite of <code>split</code>.',
             clue: 'That word is the password! Add it to the Evidence Board →',
             evidence: ['password'],
             done: e => uses(e, /join|\+=|\+\s*line/) && printed(e, PASSWORD)
         },
         {
             id: 'capitals', title: 'Shouting letters',
-            story: '<code>msg3.txt</code> looks like a friendly note... but a few letters in the middle of words are CAPITALS. That\'s no typo. They spell out a secret!',
+            story: '<code>msg3.txt</code> looks like a friendly note... but a few letters in the middle of words are CAPITALS. That\'s no typo. They spell out a secret!<br><br>A <code>for</code> loop over a <b>string</b> gives you one character at a time: <code>for letter in message:</code>. And every string can test itself: <code>letter.isupper()</code> is True when <code>letter</code> is a capital (or "upper case") letter.',
             task: 'Go through <code>msg3.txt</code> letter by letter, keep only the capital letters, and print them as one word.',
             tools: ['for', 'if', 'join'],
             hints: [
-                '<code>for ch in text:</code> loops over every character of a string.',
-                '<code>ch.isupper()</code> is True when <code>ch</code> is a capital letter.',
-                'Collect them in a list and <code>"".join()</code> it, or add them to a string with <code>+=</code>.'
+                '<code>for letter in message:</code> loops over every character of a string.',
+                '<code>letter.isupper()</code> is True when <code>letter</code> is a capital letter.',
+                'Start with empty text, <code>capitals = ""</code>, and add each capital to the end with <code>capitals += letter</code>. Or collect them in a list and <code>"".join()</code> it.'
             ],
-            try: ['with open("messages/msg3.txt") as f:\n    text = f.read()\n\nsecret = ""\nfor ch in text:\n    if ch.isupper():\n        secret += ch\nprint(secret)'],
-            learn: '<code>.isupper()</code> checks for capital letters (and <code>.islower()</code> for small ones). Looping over a string gives you one character at a time.',
+            try: ['with open("messages/msg3.txt") as file:\n    message = file.read()\n\ncapitals = ""\nfor letter in message:\n    if letter.isupper():\n        capitals += letter\nprint(capitals)'],
+            learn: '<code>.isupper()</code> checks for capital letters (and <code>.islower()</code> for small ones). Looping over a string gives you one character at a time. <code>+=</code> adds something onto the end of what a variable already holds.',
             clue: 'That\'s the name of the getaway boat. Bonus evidence! →',
             evidence: ['boat'],
             done: e => uses(e, /isupper/) && printed(e, BOAT)
@@ -166,19 +187,19 @@ CASES.push({
     evidence: [
         { id: 'when', label: '1. What time are the Magpie and the Jackdaw meeting?', ph: 'a time',
           check: v => v.includes('midnight') || /^(12|00)[:.]?00( ?am)?$/.test(v),
-          tip: 'Print msg1.txt backwards with text[::-1] and look for a time.' },
+          tip: 'Print msg1.txt backwards with message[::-1] and look for a time.' },
         { id: 'password', label: '2. What is the password hidden in the poem?', ph: 'one word',
           check: v => v === PASSWORD.toLowerCase(),
           tip: 'Take the first letter of every line of poem.txt. Use line.strip() first because some lines start with spaces.',
           tips: { [POEM.map(l => l[0]).join('').toLowerCase()]: 'Some of those are spaces! Use line.strip()[0] to skip them.' } },
         { id: 'boat', label: 'What is the name of the getaway boat?', bonus: true, ph: 'a boat name',
           check: v => v === BOAT.toLowerCase(),
-          tip: 'Keep only the characters in msg3.txt where ch.isupper() is True.' }
+          tip: 'Keep only the characters in msg3.txt where letter.isupper() is True.' }
     ],
 
     bonus: [
         { title: 'The boat.', text: 'Find the getaway boat\'s name hidden in the capitals of msg3.txt. That\'s a bonus answer!' },
-        { title: 'Write backwards.', text: 'Write your own backwards message to a friend.', code: 'secret = "meet me at the climbing wall"\nprint(secret[::-1])' },
+        { title: 'Write backwards.', text: 'Write your own backwards message to a friend.', code: 'my_message = "meet me at the climbing wall"\nprint(my_message[::-1])' },
         { title: 'Palindromes.', text: 'A palindrome reads the same both ways. Is "racecar" one? Python can check: <code>word == word[::-1]</code>', code: 'for word in ["racecar", "pier", "level", "kayak", "magpie"]:\n    print(word, word == word[::-1])' }
     ]
 });
