@@ -93,7 +93,7 @@ CASES.push({
 
     // "What does each line do?" for lines the general explanations don't cover well
     explain: {
-        'print(hashlib.sha256("seagull".encode()).hexdigest())': 'Works from the inside out. <code>"seagull".encode()</code> turns the text into bytes, <code>hashlib.sha256()</code> makes their fingerprint, and <code>.hexdigest()</code> writes it as 64 hex digits for <code>print()</code> to show.',
+        'print(hashlib.sha256("seagull".encode()).hexdigest())': 'Works from the inside out. <code>"seagull".encode()</code> turns the text into bytes (use any word you like!), <code>hashlib.sha256()</code> makes their fingerprint, and <code>.hexdigest()</code> writes it as 64 hex digits for <code>print()</code> to show.',
         'password_hash = file.read().strip()': 'Reads the hash from the file into <code>password_hash</code>. <code>.strip()</code> removes the invisible "new line" from the end, so it can match exactly.',
         'for word in file:': 'A <b>loop</b> over the open file: it goes round once for each line, putting that line in <code>word</code>. Each line of the wordlist holds one word.',
         'word = word.strip()': 'Removes the invisible "new line" from the end of <code>word</code>, and puts the tidy word back in <code>word</code>. Without this, every word would have an extra hidden character, so its hash would be wrong and it would look one letter longer!',
@@ -120,28 +120,27 @@ CASES.push({
         {
             id: 'hash', title: 'Make a fingerprint',
             story: 'A <b>hash</b> is like a fingerprint for text. A hash function takes any text and mixes it up into a long jumble of hex digits. The same text always gives exactly the same hash, but change one letter and the hash is totally different. And there\'s no way to turn a hash back into the text!<br><br>That\'s why websites store the hash of your password, not the password itself. When you log in, they hash what you typed and check that the two fingerprints match.<br><br>Python\'s <code>hashlib</code> module makes hashes. We\'ll use one called <b>SHA-256</b>. Like base64, it works on bytes, so turn your text into bytes first with <code>.encode()</code>.',
-            task: 'Use <code>hashlib.sha256()</code> to print the SHA-256 hash of any word you like, as hex with <code>.hexdigest()</code>.',
+            task: 'Use <code>hashlib.sha256()</code> to print the SHA-256 hash of <b>any word you like</b>, as hex with <code>.hexdigest()</code>.',
             tools: ['hashlib'],
             hints: [
-                'Start with <code>import hashlib</code>.',
-                'sha256 needs bytes, not a string, so use <code>.encode()</code>: <code>hashlib.sha256("hello".encode())</code>',
-                'Add <code>.hexdigest()</code> on the end and print it.'
+                'Start with <code>import hashlib</code> to load the hashing toolkit. Your word goes inside <code>hashlib.sha256( )</code>.',
+                'sha256 needs bytes, not a string, so <code>.encode()</code> goes straight after the closing quote of your word. Then <code>.hexdigest()</code> on the end turns the hash into hex digits. Print it, and count your brackets!'
             ],
-            try: ['import hashlib\n\nprint(hashlib.sha256("seagull".encode()).hexdigest())'],
+            typeIt: 'import hashlib\nprint(hashlib.sha256("⟨seagull⟩".encode()).hexdigest())',
             learn: '<code>hashlib.sha256(text.encode()).hexdigest()</code> makes a 64-character fingerprint. Try hashing "Seagull" and "seagull": completely different!',
             done: e => uses(e, /hashlib/, /sha256/, /hexdigest/)
         },
         {
             id: 'crack', title: 'Crack the password',
             story: 'You can\'t turn a hash back into a password... but you can <b>guess</b>. The Magpie used a password from their own <b>wordlist</b>. Hash every word, and when one matches the hash in <code>password.sha256</code>, you\'ve found the password! This is how security experts test whether passwords are too easy to guess.<br><br>Watch out for invisible characters. Every line in a file ends with a hidden "new line" character, and a word with a new line on the end has a completely different hash. <code>.strip()</code> removes it.',
-            task: 'Hash every word in <code>nest/wordlist.txt</code> and print the one whose hash matches <code>nest/password.sha256</code>.',
+            task: 'Hash every word in <code>nest/wordlist.txt</code> and print the one whose hash matches <code>nest/password.sha256</code>.<br><br>Keep the <code>import hashlib</code> line from the last objective. You\'ll need it again!',
             tools: ['hashlib', 'for', 'strip'],
             hints: [
-                'Read the hash from the file with <code>.read().strip()</code> so there\'s no new line on the end.',
-                'Loop over the words: <code>for word in file:</code> and <code>word = word.strip()</code> each one (newlines would change the hash!).',
-                'Inside the loop: <code>if hashlib.sha256(word.encode()).hexdigest() == password_hash:</code> then print the word.'
+                'First read <code>nest/password.sha256</code> into a variable called <code>password_hash</code>. Use <code>.strip()</code> to take the new line off the end.',
+                'Then open <code>nest/wordlist.txt</code> and loop over it with <code>for word in file:</code> (4 spaces in front, inside the <code>with</code>). Inside the loop (8 spaces), <code>word = word.strip()</code>.',
+                'Still inside the loop, hash the word the same way as your fingerprint, and compare it with two equals signs: <code>if hashlib.sha256(word.encode()).hexdigest() == password_hash:</code>. The <code>print</code> under it has 12 spaces in front.'
             ],
-            try: ['import hashlib\n\nwith open("nest/password.sha256") as file:\n    password_hash = file.read().strip()\n\nwith open("nest/wordlist.txt") as file:\n    for word in file:\n        word = word.strip()\n        if hashlib.sha256(word.encode()).hexdigest() == password_hash:\n            print("Password found:", word)'],
+            typeIt: 'with open("nest/password.sha256") as file:\n    password_hash = file.read().strip()\nwith open("nest/wordlist.txt") as file:\n    for word in file:\n        word = word.strip()\n        if hashlib.sha256(word.encode()).hexdigest() == password_hash:\n            print("Password found:", word)',
             learn: 'Trying a list of likely passwords is called a <b>dictionary attack</b>. It\'s why your passwords should be long and not just a word with a number on the end! 🔑',
             clue: 'The laptop is unlocked! Add the password to the Evidence Board →',
             evidence: ['password'],
@@ -153,11 +152,11 @@ CASES.push({
             task: 'Read <code>nest/vault.hex</code>, turn it into bytes with <code>bytes.fromhex()</code>, XOR every byte with 42, and print the secret message.',
             tools: ['xor', 'base64', 'ord/chr'],
             hints: [
-                '<code>vault_bytes = bytes.fromhex(text)</code>. Looping over bytes gives you numbers, not letters!',
-                'For each number <code>byte</code> in <code>vault_bytes</code>, <code>byte ^ 42</code> unlocks it, and <code>chr()</code> turns it into a letter.',
-                'Build up a string: <code>message += chr(byte ^ 42)</code>, then print the message after the loop.'
+                'Read the file with <code>.strip()</code>, and put it through <code>bytes.fromhex()</code>. Keep the bytes in a variable like <code>vault_bytes</code>.',
+                'Looping over bytes gives you numbers, not letters! <code>byte ^ 42</code> unlocks each number, and <code>chr()</code> turns it into a letter. The <code>^</code> is usually Shift and 6 on the keyboard.',
+                'Make an empty string, <code>message = ""</code>. Then <code>for byte in vault_bytes:</code>, and inside the loop (4 spaces in front) <code>message += chr(byte ^ 42)</code>. Print <code>message</code> after the loop, with no spaces in front.'
             ],
-            try: ['with open("nest/vault.hex") as file:\n    vault_bytes = bytes.fromhex(file.read().strip())\n\nmessage = ""\nfor byte in vault_bytes:\n    message += chr(byte ^ 42)\nprint(message)'],
+            typeIt: 'with open("nest/vault.hex") as file:\n    vault_bytes = bytes.fromhex(file.read().strip())\nmessage = ""\nfor byte in vault_bytes:\n    message += chr(byte ^ 42)\nprint(message)',
             learn: '<code>^</code> is XOR: it flips the binary digits (bits) of a number wherever the key has a 1. <code>(x ^ 42) ^ 42</code> gives back <code>x</code>, so the same key locks AND unlocks.',
             clue: 'The Magpie\'s real name AND the Deckchair\'s location! Add them to the Evidence Board →',
             evidence: ['name', 'deckchair'],
@@ -166,14 +165,14 @@ CASES.push({
         {
             id: 'encrypt', title: 'Send an encrypted report',
             story: 'Inspector Ada wants your report, but the Jackdaw might be snooping on the Bureau\'s files. Encrypt it with a Caesar shift of <b>7</b> (Ada will shift it back), and save it to a file called <code>report.txt</code>.<br><br>Your report has small letters too, and they have different numbers: <code>ord("A")</code> is 65, but <code>ord("a")</code> is 97. So capitals use 65 in the shift maths, and small letters use 97.<br><br>So far you\'ve only <b>read</b> files. To <b>write</b> one, open it with <code>"w"</code>: <code>open("report.txt", "w")</code>. Then <code>file.write()</code> puts text into it. Careful: <code>"w"</code> replaces anything already in the file.',
-            task: 'Write an <code>encrypt(text)</code> function that shifts every letter forward by 7. Use it to encrypt a short report that mentions the <b>Magpie</b>, and write the result into <code>report.txt</code>.',
+            task: 'Write an <code>encrypt(text)</code> function that shifts every letter forward by 7. Use it to encrypt a short report, and write the result into <code>report.txt</code>.<br><br>Write the report in your own words, but it <b>must mention the Magpie</b>, so Ada knows who it\'s about!',
             tools: ['def', 'ord/chr', 'write'],
             hints: [
-                'Reuse your shift machine from Caesar\'s Return. <code>.isupper()</code> is True for a capital letter, and <code>.islower()</code> is True for a small one.',
-                'Inside your function, loop over the characters. For a capital: <code>chr((ord(character) - 65 + 7) % 26 + 65)</code>. For a small letter, use 97 instead of 65. Leave everything else alone.',
-                'Then <code>with open("report.txt", "w") as file:</code> and <code>file.write(encrypt(report))</code>'
+                'It\'s like your <code>decode()</code> from Caesar\'s Return, but shifting forward (<code>+ 7</code>), and twice: capitals use 65, and small letters use 97. <code>.isupper()</code> is True for a capital letter, and <code>.islower()</code> is True for a small one.',
+                'Watch the spaces in front! Inside <code>encrypt()</code> is 4 spaces, inside the <code>for</code> is 8, and inside the <code>if</code>, <code>elif</code> and <code>else</code> is 12. <code>return secret</code> lines up with <code>for</code>.',
+                'Put your report in a variable, e.g. <code>report = "The Magpie is ..."</code>. Then <code>with open("report.txt", "w") as file:</code> and, with 4 spaces in front, <code>file.write(encrypt(report))</code>. Still not done? Check your report has the word Magpie in it.'
             ],
-            try: ['def encrypt(text):\n    secret = ""\n    for character in text:\n        if character.isupper():\n            secret += chr((ord(character) - 65 + 7) % 26 + 65)\n        elif character.islower():\n            secret += chr((ord(character) - 97 + 7) % 26 + 97)\n        else:\n            secret += character\n    return secret\n\nreport = "The Magpie is Margot Pye. The Golden Deckchair is under the Palace Pier."\nwith open("report.txt", "w") as file:\n    file.write(encrypt(report))\nprint(encrypt(report))'],
+            typeIt: 'def encrypt(text):\n    secret = ""\n    for character in text:\n        if character.isupper():\n            secret += chr((ord(character) - 65 + 7) % 26 + 65)\n        elif character.islower():\n            secret += chr((ord(character) - 97 + 7) % 26 + 97)\n        else:\n            secret += character\n    return secret\nreport = "⟨The Magpie is Margot Pye. The Golden Deckchair is under the Palace Pier.⟩"\nwith open("report.txt", "w") as file:\n    file.write(encrypt(report))\nprint(encrypt(report))',
             learn: 'Opening a file with <code>"w"</code> lets you <b>write</b> to it. You\'ve gone from reading evidence to making your own secret files!',
             done: e => wrote(e, 'report.txt') && !e.text.toLowerCase().includes('magpie') &&
                        shiftText(e.text, -7).toLowerCase().includes('magpie')

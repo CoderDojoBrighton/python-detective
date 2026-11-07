@@ -71,6 +71,8 @@ for (const [i, c] of CASES.entries()) {
     for (const m of c.missions) {
         for (const code of m.try || []) checkExplained(code, c.explain, `mission "${m.id}"`);
         if (m.typeIt) checkExplained(m.typeIt.replace(/[⟨⟩]/g, ''), c.explain, `mission "${m.id}" typeIt`);
+        // The ghost code can't match a blank line, so typeIt can't have any
+        if (m.typeIt?.split('\n').some(l => !l.trim())) fail(`mission "${m.id}" typeIt has a blank line`);
         if (m.data) checkExplained(m.data, c.explain, `mission "${m.id}" data`);
     }
     for (const b of c.bonus || []) if (b.code) checkExplained(b.code, c.explain, `bonus "${b.title}"`);

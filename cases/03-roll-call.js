@@ -85,41 +85,42 @@ CASES.push({
 
     missions: [
         {
-            id: 'lists', title: 'Count the visitors', tutorial: true,
-            story: 'Mr Okoro\'s registers have 30 names each. You <i>could</i> make 30 variables, <code>visitor1</code>, <code>visitor2</code> and so on, but that\'s a lot of typing! A <b>list</b> is one variable that holds lots of things, in order. You write it with <code>[square brackets]</code> and put commas between the items: <code>suspects = ["Ada", "Ben", "Chloe"]</code>.<br><br>Mr Okoro\'s lists are called <code>signed_in</code> and <code>signed_out</code>, so their names say what they hold. First, check how many names each one has. You used <code>len()</code> to count the letters in the Magpie\'s note. On a list, it counts the items.',
-            task: 'Click the glowing code below to add the two lists to your code. Then print how many people are in <code>signed_in</code>.',
+            id: 'lists', title: 'Count the visitors',
+            story: 'Mr Okoro\'s registers have 30 names each. You <i>could</i> make 30 variables, <code>visitor1</code>, <code>visitor2</code> and so on, but that\'s a lot of typing! A <b>list</b> is one variable that holds lots of things, in order. You write it with <code>[square brackets]</code> and put commas between the items: <code>suspects = ["Ada", "Ben", "Chloe"]</code>.<br><br>We\'ve added Mr Okoro\'s lists to the bottom of your code. They\'re called <code>signed_in</code> and <code>signed_out</code>, so their names say what they hold.<br><br>First, check how many names each one has. You used <code>len()</code> to count the letters in the Magpie\'s note. On a list, it counts the items.',
+            task: 'Type the two lines below at the bottom of your code, then press <kbd>▶ Run</kbd>. They print how many people are in each list.',
             tools: ['lists', 'len'],
             hints: [
-                'Click the glowing code box below. It adds both lists to the end of your code.',
-                '<code>print(len(signed_in))</code>'
+                'Each line has two sets of brackets: one for <code>len()</code>, and one for <code>print()</code> around it.',
+                'Make sure each line ends with <code>))</code>: one bracket closes <code>len(</code>, the other closes <code>print(</code>.'
             ],
-            try: [`${LISTS}\n\nprint(len(signed_in))\nprint(len(signed_out))`],
+            data: LISTS,
+            typeIt: 'print(len(signed_in))\nprint(len(signed_out))',
             learn: 'A <b>list</b> keeps many values in order, inside <code>[square brackets]</code>. <code>len(signed_in)</code> counts the items, just like it counted the letters in a string.',
             done: e => uses(e, /len\s*\(\s*signed_in\s*\)/) && printed(e, String(SIGNED_IN.length))
         },
         {
-            id: 'loop', title: 'Read out the register', tutorial: true,
+            id: 'loop', title: 'Read out the register',
             story: 'The lists are different lengths, so somebody didn\'t sign out! To check the names, you need to look at them one at a time. A <b>for loop</b> does that for you. It takes the first item in the list and runs some lines of code, then takes the next item and runs them again, all the way to the end.<br><br><code>for name in signed_in:</code> means "for each name in signed_in, do this". Each time round, Python puts the current item in a variable called <code>name</code>. You choose that name: <code>visitor</code> or <code>person</code> would work just as well.<br><br>The lines to repeat go underneath, <b>indented</b> with 4 spaces, just like the lines under an <code>if</code>. Don\'t forget the colon at the end of the <code>for</code> line.',
-            task: 'Use a <code>for</code> loop to print every name in <code>signed_in</code>, one per line.',
+            task: 'Type the two lines below at the bottom of your code, then press <kbd>▶ Run</kbd>. The loop prints every name in <code>signed_in</code>, one per line.<br><br>Keep the lists above! Python needs them to know what <code>signed_in</code> is.',
             tools: ['for'],
             hints: [
                 'The loop line ends with a colon: <code>for name in signed_in:</code>',
-                'The next line needs 4 spaces in front: <code>    print(name)</code>'
+                'The next line needs 4 spaces in front: <code>    print(name)</code>. That puts it inside the loop.'
             ],
-            try: ['for name in signed_in:\n    print(name)'],
+            typeIt: 'for name in signed_in:\n    print(name)',
             learn: '<code>for name in signed_in:</code> takes each item in turn, puts it in the variable <code>name</code>, then runs the indented lines. You don\'t even need to know how long the list is!',
             done: e => uses(e, /for\s+\w+\s+in\s+signed_in/) && printed(e, SIGNED_IN[0], SIGNED_IN[SIGNED_IN.length - 1])
         },
         {
             id: 'missing', title: 'Who never left?',
             story: 'Now for the real detective work. For each person who signed <b>in</b>, check whether their name is missing from <code>signed_out</code>.<br><br><code>in</code> asks "is this somewhere in the list?", and <code>not in</code> asks "is this missing from the list?". Put <code>not in</code> in an <code>if</code>, put the <code>if</code> inside your loop, and Python checks every name for you.',
-            task: 'Loop through <code>signed_in</code> and print only the names that are <b>not in</b> <code>signed_out</code>.',
+            task: 'Type the three lines below at the bottom of your code, then press <kbd>▶ Run</kbd>. This loop goes through <code>signed_in</code> again, but only prints the names that are <b>not in</b> <code>signed_out</code>.<br><br>Watch the spaces: none in front of <code>for</code>, 4 in front of <code>if</code>, and 8 in front of <code>print</code>.',
             tools: ['for', 'in', 'if'],
             hints: [
-                'Inside your loop, add an <code>if</code>: <code>if name not in signed_out:</code>',
+                'The <code>if</code> line goes inside the loop, so it has 4 spaces in front. It ends with a colon too.',
                 'The print goes one step further in, with 8 spaces in front. That puts it inside the <code>if</code>, so it only runs when the name is missing.'
             ],
-            try: ['for name in signed_in:\n    if name not in signed_out:\n        print("Still inside:", name)'],
+            typeIt: 'for name in signed_in:\n    if name not in signed_out:\n        print("Still inside:", name)',
             learn: '<code>"Ben" in signed_out</code> is True if "Ben" is somewhere in the list, and <code>not in</code> is the opposite. Put an <code>if</code> inside a <code>for</code> and you can filter a whole list!',
             clue: 'That name sounds a bit like "Magpie"... Add it to the Evidence Board →',
             evidence: ['name'],
@@ -127,15 +128,15 @@ CASES.push({
         },
         {
             id: 'badge', title: 'Lucky number seven',
-            story: `Mr Okoro remembers something: "That visitor asked for a badge that was a multiple of 7. Said it was lucky!" Below is a list of every badge number handed out yesterday.<br><br>A number is a multiple of 7 when it divides by 7 with <b>nothing left over</b>. Remember <code>%</code> from the locker? It gives the remainder. So for a multiple of 7, <code>badge % 7</code> is 0.<br><br>To check whether two things are equal, Python uses <b>two</b> equals signs: <code>==</code>. A single <code>=</code> already has a job: putting things in variables. So <code>if badge % 7 == 0:</code> asks "is the remainder 0?".`,
-            task: 'Click the glowing <code>badges</code> list below to add it to your code. Then loop through it and print the badge number that is a multiple of 7.',
+            story: `Mr Okoro remembers something: "That visitor asked for a badge that was a multiple of 7. Said it was lucky!" We\'ve added a list called <code>badges</code> to the bottom of your code. It has every badge number handed out yesterday.<br><br>A number is a multiple of 7 when it divides by 7 with <b>nothing left over</b>. Remember <code>%</code> from the locker? It gives the remainder. So for a multiple of 7, <code>badge % 7</code> is 0.<br><br>To check whether two things are equal, Python uses <b>two</b> equals signs: <code>==</code>. A single <code>=</code> already has a job: putting things in variables. So <code>if badge % 7 == 0:</code> asks "is the remainder 0?".`,
+            task: 'Type the three lines below at the bottom of your code, then press <kbd>▶ Run</kbd>. They loop through <code>badges</code> and print the badge number that is a multiple of 7.<br><br>It\'s the same shape as your last loop: 4 spaces in front of <code>if</code>, and 8 in front of <code>print</code>.',
             tools: ['for', 'if', 'maths'],
             hints: [
-                'Loop through the list with <code>for badge in badges:</code>. Each time round, <code>badge</code> holds one number.',
-                '<code>if badge % 7 == 0:</code> goes inside the loop, and the print goes inside the <code>if</code>. Two equals signs <code>==</code> compare, one <code>=</code> makes a variable.'
+                'The loop line is <code>for badge in badges:</code>. Each time round, <code>badge</code> holds one number.',
+                'The <code>if</code> line has <b>two</b> equals signs: <code>==</code> compares, one <code>=</code> makes a variable. Don\'t forget the colons at the end of the <code>for</code> and <code>if</code> lines.'
             ],
             data: BADGE_LIST,
-            try: ['for badge in badges:\n    if badge % 7 == 0:\n        print("Lucky badge:", badge)'],
+            typeIt: 'for badge in badges:\n    if badge % 7 == 0:\n        print("Lucky badge:", badge)',
             learn: '<code>==</code> checks whether two things are equal, and <code>=</code> puts a value in a variable. <code>badge % 7 == 0</code> is a classic trick to test whether a number divides exactly.',
             clue: 'Found the Magpie\'s badge! Add it to the Evidence Board →',
             evidence: ['badge'],

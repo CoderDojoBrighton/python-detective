@@ -414,24 +414,39 @@ function ensureEditor() {
 const parseTemplate = line => line.split(/(⟨[^⟩]*⟩)/).filter(Boolean).map(p => p.startsWith('⟨') ? { wild: p.slice(1, -1) } : { lit: p });
 const plainCode = code => code.replace(/[⟨⟩]/g, '');
 
-// Compare what's typed on a line with one template line. Spaces are optional, like in Python.
-// Returns { state: 'done' | 'partial' | 'wrong', rest: the ghost still to type, at: where it went wrong }
+// Two characters that only mean something side by side, so a space between them is a Python error:
+// two parts of a name or word (sig ned_in), or a two-character sign (/ /, = =)
+const glued = (a, b) => (/\w/.test(a || '') && /\w/.test(b || '')) || ['//', '**', '==', '!=', '<=', '>=', '+=', '-=', '*=', '/=', '%='].includes(a + b);
+
+// Compare what's typed on a line with one template line. Spaces are optional, like in Python,
+// except where leaving one out or adding one would be a Python error (fornamein, sig ned_in).
+// Inside quotes any spacing is fine. The spaces at the start of the line are checked by indentProblem.
+// Returns { state: 'done' | 'partial' | 'wrong', rest: the ghost still to type, at: where it went wrong,
+//   why: 'space' (a space that has to go) or 'nospace' (a space that's missing), for spacing mistakes }
 function matchTemplate(typed, tokens) {
-    let p = 0;
+    const lead = tokens[0]?.lit?.match(/^ */)[0].length || 0;
+    if (lead) tokens = [{ lit: tokens[0].lit.slice(lead) }, ...tokens.slice(1)];
+    let p = typed.length - typed.trimStart().length, quote = null;
     // ci is how far into token ti they've got. In a changeable part, the example keeps showing
     // while what they've typed still matches it, e.g. "A" -> ghost "gent Sparrow"
     const restFrom = (ti, ci, wildTyped = '') => tokens.slice(ti).map((t, k) =>
         k ? (t.lit ?? t.wild) : t.lit != null ? t.lit.slice(ci)
             : t.wild.toLowerCase().startsWith(wildTyped.toLowerCase()) ? t.wild.slice(wildTyped.length) : '').join('');
+    // Nothing typed yet: the ghost includes the spaces it should start with
+    if (!typed.trim()) return { state: 'partial', rest: ' '.repeat(Math.max(0, lead - typed.length)) + restFrom(0, 0) };
     for (let ti = 0; ti < tokens.length; ti++) {
         const t = tokens[ti];
         if (t.lit != null) {
             for (let ci = 0; ci < t.lit.length; ci++) {
-                const want = t.lit[ci];
+                const want = t.lit[ci], from = p;
                 while (p < typed.length && typed[p] === ' ' && want !== ' ') p++;
                 if (p >= typed.length) return { state: 'partial', rest: restFrom(ti, ci) };
-                if (typed[p] === want) p++;
-                else if (want !== ' ') return { state: 'wrong', at: p, rest: restFrom(ti, ci) };
+                if (!quote && p > from && glued(typed[from - 1], want)) return { state: 'wrong', at: from, rest: restFrom(ti, ci), why: 'space' };
+                if (typed[p] === want) {
+                    p++;
+                    if (want === '"' || want === "'") quote = !quote ? want : quote === want ? null : quote;
+                } else if (want !== ' ') return { state: 'wrong', at: p, rest: restFrom(ti, ci) };
+                else if (!quote && glued(typed[p - 1], t.lit[ci + 1])) return { state: 'wrong', at: p, rest: restFrom(ti, ci), why: 'nospace' };
             }
         } else {
             const stop = tokens[ti + 1]?.lit?.[0], start = p;
@@ -448,8 +463,7 @@ function matchTemplate(typed, tokens) {
 // after it is where they type: the first non-blank line there is template line 1, the next is line 2...
 function startPractice(m, savedLine) {
     stopPractice();
-    // Data the mission needs (like the note's scraps) goes in first, above where they type
-    if (m.data && !editor.getValue().includes(m.data.split('\n')[0])) appendCode(m.data);
+    addMissionData(m);
     let a = savedLine ?? editor.lastLine();
     if (a > editor.lastLine()) a = editor.lastLine();
     if (savedLine == null) while (a >= 0 && !editor.getLine(a).trim()) a--;
@@ -466,6 +480,15 @@ function stopPractice() {
     S.practice.anchor?.clear();
     S.practice = null;
 }
+
+// Data the mission needs (like the note's scraps) goes in first, above where they type
+function addMissionData(m) {
+    if (m.data && !editor.getValue().includes(m.data.split('\n')[0])) appendCode(m.data);
+}
+
+// Easy cases show the code to type straight away. Medium and hard ones let the student
+// write it themselves first, and only show it once every hint has been used.
+const codeShown = m => !!m.typeIt && (S.c.difficulty === 'easy' || (S.hintLevel[m.id] || 0) >= m.hints.length);
 
 // Add code to the end without moving on to anything else
 function appendCode(code) {
@@ -520,6 +543,50 @@ function onlyCapitals(text, tokens) {
     return matchTemplate(text.toLowerCase(), lower).state !== 'wrong';
 }
 
+// Would Python complain about the spaces at the start of line n? Works out the indent levels of
+// the code above it the way Python does. Lines inside unclosed brackets (like a long list) don't count.
+// Returns 'expected' (needs more spaces), 'unexpected' (too many) or 'unindent' (lines up with nothing), or null
+function indentProblem(n) {
+    const levels = [0];
+    let depth = 0, opener = false;
+    for (let d = 0; d <= n; d++) {
+        const text = editor.getLine(d);
+        if (depth === 0 && (!text.trim() || text.trim().startsWith('#'))) continue;
+        if (depth === 0) {
+            const indent = text.length - text.trimStart().length;
+            let problem = null;
+            if (opener) {
+                if (indent > levels.at(-1)) levels.push(indent);
+                else problem = 'expected';
+            } else if (indent > levels.at(-1)) problem = 'unexpected';
+            else {
+                while (indent < levels.at(-1)) levels.pop();
+                if (indent !== levels.at(-1)) problem = 'unindent';
+            }
+            if (d === n) return problem;
+            if (problem) return null;      // Python stops at the first bad line, so that's the one to fix
+        }
+        // Brackets, strings and comments on this line, and whether it ends with a colon
+        let quote = null, last = '';
+        for (const ch of text) {
+            if (quote) { if (ch === quote) quote = null; continue; }
+            if (ch === '#') break;
+            if (ch === '"' || ch === "'") quote = ch;
+            else if ('([{'.includes(ch)) depth++;
+            else if (')]}'.includes(ch)) depth = Math.max(0, depth - 1);
+            if (ch.trim()) last = ch;
+        }
+        opener = depth === 0 && last === ':';
+    }
+    return null;
+}
+
+const INDENT_TIPS = {
+    expected: '✖ The line above ends with a colon <b>:</b>, so this line needs more spaces in front. It should be:',
+    unexpected: '✖ This line has too many spaces in front. Only lines under a line ending in a colon <b>:</b> get pushed in. It should be:',
+    unindent: '✖ The spaces in front of this line don\'t line up with the lines above. It should be:'
+};
+
 // The end of the mistake in a line: the rest of that word, or at least one character
 function mistakeEnd(text, at) {
     const m = text.slice(at).match(/^\w+/);
@@ -547,6 +614,9 @@ function updateGhost() {
     P.marks = [];
     const { start, rows, extra } = practiceLayout();
     const left = P.plain.slice(rows.length);
+    // Lines that are right apart from the spaces in front, which Python would reject
+    const indents = new Map(rows.filter(x => ['done', 'partial'].includes(x.r.state) && editor.getLine(x.line).trim())
+        .map(x => [x.line, indentProblem(x.line)]).filter(([, problem]) => problem));
     for (const x of extra) {
         const text = editor.getLine(x.line);
         P.marks.push(editor.markText(CodeMirror.Pos(x.line, 0), CodeMirror.Pos(x.line, text.length), { className: 'cm-ghost-wrong' }));
@@ -557,7 +627,7 @@ function updateGhost() {
             : '✖ This line isn\'t the next one to type. Delete it, or move it to the right place.'}</div>`;
         P.marks.push(editor.addLineWidget(x.line, el));
     }
-    if (!left.length && !extra.length && rows.every(x => x.r.state === 'done')) {
+    if (!left.length && !extra.length && !indents.size && rows.every(x => x.r.state === 'done')) {
         if (!P.typed) { P.typed = true; $('#run-hint').classList.add('show'); toast('✔ You typed it all! Now press ▶ Run'); }
         return;
     }
@@ -576,7 +646,14 @@ function updateGhost() {
             const right = P.plain[k].match(/\w+/g)?.find(w => w !== typo && w.toLowerCase() === typo.toLowerCase());
             P.marks.push(editor.addLineWidget(line, ghostBlock([P.plain[k]], 'ghost-wrong', onlyCapitals(text, P.lines[k])
                 ? `✖ Watch the capital letters! To Python, ${right ? `${typo} and ${right}` : 'Print and print'} are different words. It should be:`
+                : r.why === 'nospace' ? '✖ These words need a space between them. It should be:'
+                : r.why === 'space' ? '✖ Take out the space in the red bit. It should be:'
                 : '✖ Not quite. Check the red bit. It should be:')));
+        }
+        if (indents.has(line)) {
+            const indent = text.length - text.trimStart().length;
+            P.marks.push(editor.markText(CodeMirror.Pos(line, 0), CodeMirror.Pos(line, Math.max(1, indent)), { className: 'cm-ghost-wrong' }));
+            P.marks.push(editor.addLineWidget(line, ghostBlock([P.plain[k]], 'ghost-wrong', INDENT_TIPS[indents.get(line)])));
         }
     }
     // Lines they haven't started yet: under the last one they've typed, on an empty line, or at the end
@@ -603,7 +680,7 @@ function typeForMe() {
     // Lines in the wrong place go first (bottom up, so the line numbers above don't move)
     for (const x of practiceLayout().extra.reverse()) editor.replaceRange('', CodeMirror.Pos(x.line, 0), CodeMirror.Pos(x.line + 1, 0));
     const { start, rows } = practiceLayout();
-    const bad = rows.find(x => x.r.state !== 'done');
+    const bad = rows.find(x => x.r.state !== 'done' || indentProblem(x.line));
     const k = bad ? bad.k : rows.length;
     const from = bad ? bad.line : rows.length ? rows[rows.length - 1].line + 1 : start;
     const rest = P.plain.slice(k).join('\n') + '\n';
@@ -823,6 +900,7 @@ function renderCasePanel(animateLearned) {
         const lvl = S.hintLevel[cur.id] || 0;
         const hard = S.c.difficulty === 'hard';
         const showTry = cur.tutorial || (!hard && lvl >= cur.hints.length);
+        const hidden = cur.typeIt && !codeShown(cur);
         const fields = pendingEvidence(cur);
         keepTyped($('#mission'), () => {
         if (fields.length) $('#mission').innerHTML = `<div class="card mission">
@@ -839,16 +917,16 @@ function renderCasePanel(animateLearned) {
                 ${snippetHtml(cur.data, { click: false, open: false })}</div>`
             : cur.data ? `<div class="try"><span class="small">📋 You'll need this. Click it to add it to your code:</span>
                 ${snippetHtml(cur.data)}</div>` : ''}
-            ${cur.typeIt ? `<div class="try"><div class="type-label">✍️ TYPE THIS INTO THE EDITOR</div>
+            ${codeShown(cur) ? `<div class="try"><div class="type-label">✍️ TYPE THIS INTO THE EDITOR</div>
                 ${snippetHtml(plainCode(cur.typeIt), { click: false, open: true })}
-                <p class="small">The grey <b>ghost code</b> in the editor shows you what to type. Typing it yourself is the best way to remember it!</p>
+                <p class="small">The grey <b>ghost code</b> in the editor shows you what to type. Typing it yourself is the best way to remember it!${S.c.difficulty === 'easy' ? '' : ' If your own try gives an error, delete it first.'}</p>
                 ${S.stuck >= 2 || lvl >= cur.hints.length ? '<button class="link-btn" data-type-for-me>😵 Really stuck? Type it in for me</button>' : ''}</div>` : ''}
             ${cur.tools?.length ? `<div class="row"><span class="small">📖 Click to read about:</span>${cur.tools.map(t =>
                 `<button class="chip" data-ref="${escapeHtml(t)}" title="Click to read about ${escapeHtml(t)} in the output panel">📖 ${escapeHtml(t)}</button>`).join('')}</div>` : ''}
             ${lvl ? `<ul class="hints">${cur.hints.slice(0, lvl).map(h => `<li>💡 ${h}</li>`).join('')}</ul>` : ''}
             ${showTry && !cur.typeIt && cur.try?.length ? `<div class="try"><span class="small">💡 Here's some code that does it. Click it to add it to your code, read what each line does, then press <kbd>▶ Run</kbd>:</span>
                 ${cur.try.map(c => snippetHtml(c)).join('')}</div>` : ''}
-            ${lvl < cur.hints.length ? `<button class="hint-btn" data-hint>💡 ${lvl ? 'Another hint' : 'Need a hint?'} <span>(${cur.hints.length - lvl} left${hintCostText()})</span></button>` : ''}
+            ${lvl < cur.hints.length ? `<button class="hint-btn" data-hint>💡 ${lvl ? 'Another hint' : 'Need a hint?'} <span>(${cur.hints.length - lvl} left${hidden ? ', then the code' : ''}${hintCostText()})</span></button>` : ''}
         </div>`;
         });
     }
@@ -874,7 +952,10 @@ function renderCasePanel(animateLearned) {
     }
 
     // Ghost code while the current objective is waiting to be typed
-    const typing = !S.celebrate && cur?.typeIt && !S.done.has(cur.id);
+    const waiting = !S.celebrate && cur?.typeIt && !S.done.has(cur.id);
+    const typing = waiting && codeShown(cur);
+    // Before the code is shown (medium and hard cases), they still get the mission's data
+    if (waiting && !typing && S.dataFor !== cur.id) { S.dataFor = cur.id; addMissionData(cur); }
     if (typing && S.practice?.id !== cur.id) {
         startPractice(cur, S.resume?.id === cur.id ? S.resume.line : null);
         saveCaseState();

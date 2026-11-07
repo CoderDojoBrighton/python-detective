@@ -58,6 +58,9 @@ signed_out = [
     "Ella Brooks", "Maya Cohen"
 ]
 
+print(len(signed_in))
+print(len(signed_out))
+
 for name in signed_in:
     print(name)
 

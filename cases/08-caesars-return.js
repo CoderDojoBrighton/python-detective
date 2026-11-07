@@ -96,10 +96,10 @@ CASES.push({
             task: 'Print the number for <code>"A"</code> using <code>ord()</code>, and print the letter for the number <code>72</code> using <code>chr()</code>.',
             tools: ['ord/chr'],
             hints: [
-                '<code>ord("A")</code> gives a number. <code>chr(72)</code> gives a letter.',
-                'Put them both inside <code>print()</code>: <code>print(ord("A"), chr(72))</code>'
+                '<code>ord("A")</code> gives a number. <code>chr(72)</code> gives a letter. Neither shows anything on its own!',
+                'Put them inside a <code>print()</code>, with a comma between them, to show both on one line.'
             ],
-            try: ['print(ord("A"), chr(72))'],
+            typeIt: 'print(ord("A"), chr(72))',
             learn: '<code>ord("A")</code> is <code>65</code>, <code>ord("B")</code> is <code>66</code>, all the way to <code>ord("Z")</code>, which is <code>90</code>. <code>chr()</code> does the opposite: <code>chr(65)</code> is <code>"A"</code>. Small letters have their own numbers: <code>ord("a")</code> is <code>97</code>.',
             done: e => uses(e, /ord\s*\(/, /chr\s*\(/)
         },
@@ -109,25 +109,25 @@ CASES.push({
             task: 'Write a function with <code>def</code> that shifts a capital letter along the alphabet. It needs <code>ord</code>, <code>chr</code> and <code>% 26</code>. Test it: shifting <code>"A"</code> by 3 should give <code>"D"</code>, and <code>"Z"</code> by 1 should give <code>"A"</code>.',
             tools: ['def', 'ord/chr', 'maths'],
             hints: [
-                'Start with <code>def shift_letter(letter, shift):</code> and indent the line inside by 4 spaces. <code>letter</code> and <code>shift</code> are names you pick for the two values the function is given.',
-                'The place from 0 to 25 is <code>ord(letter) - 65</code>. Add <code>shift</code>, then <code>% 26</code> wraps 26 back round to 0.',
-                'Add 65 back on, then use <code>chr()</code>: <code>return chr((ord(letter) - 65 + shift) % 26 + 65)</code>'
+                'Start with <code>def shift_letter(letter, shift):</code>. The colon matters! <code>letter</code> and <code>shift</code> are names you pick for the two values the function is given.',
+                'The next line needs 4 spaces in front, so Python knows it belongs to the function. It does all four steps and sends back the answer: <code>return chr(... + 65)</code>',
+                'Fill in the middle: <code>(ord(letter) - 65 + shift) % 26</code>. Then, with no spaces in front, test it: <code>print(shift_letter("A", 3), shift_letter("Z", 1))</code>'
             ],
-            try: ['def shift_letter(letter, shift):\n    return chr((ord(letter) - 65 + shift) % 26 + 65)\n\nprint(shift_letter("A", 3), shift_letter("Z", 1))'],
+            typeIt: 'def shift_letter(letter, shift):\n    return chr((ord(letter) - 65 + shift) % 26 + 65)\nprint(shift_letter("A", 3), shift_letter("Z", 1))',
             learn: '<code>def</code> makes a <b>function</b>: a named recipe you can use again and again. <code>return</code> sends its answer back. <code>% 26</code> gives the <b>remainder</b> after dividing by 26, so 26 becomes 0 and 27 becomes 1. That wraps Z back round to A. A shift of <code>-3</code> undoes a shift of <code>3</code>.',
             done: e => uses(e, /def\s+\w+\s*\(/, /ord\s*\(/, /chr\s*\(/, /%\s*26/)
         },
         {
             id: 'note1', title: 'Decode page one',
             story: 'Time to read page one! It starts with <code>key: 3</code>, so the Jackdaw shifted every letter <b>forward</b> by 3. To read it, shift every letter <b>back</b> by 3. Spaces and full stops weren\'t shifted, so leave those alone.<br><br>The plan: go through the text one character at a time with a <code>for</code> loop. If the character is a letter, shift it back. If not, keep it as it is. Either way, add it onto the end of a new string called <code>decoded</code>, which starts out empty.<br><br>We\'ll put all this in a function called <code>decode()</code>, so you can use it again on page two.',
-            task: 'Read <code>notebook/note1.txt</code>, shift every letter back by 3, and print the secret message. (The <code>key: 3</code> line at the top will come out as nonsense. Ignore it: the message is underneath.)',
+            task: 'Read <code>notebook/note1.txt</code>, write a <code>decode(text, shift)</code> function that shifts every letter back, and print the message decoded with a shift of 3.<br><br>The <code>key: 3</code> line at the top will come out as nonsense. Ignore it: the message is underneath.',
             tools: ['open', 'for', 'def'],
             hints: [
-                'Loop over every character: <code>for character in text:</code>. Only shift it if <code>character.isalpha()</code> is True (it\'s a letter). Otherwise keep it as it is.',
-                'Build the answer up in a string: start with <code>decoded = ""</code> and add one character at a time with <code>decoded += ...</code>',
-                'Shifting back means taking away: <code>chr((ord(character) - 65 - shift) % 26 + 65)</code>. Then print <code>decode(text, 3)</code>.'
+                'Read the file into a variable called <code>text</code>. Then start the function: <code>def decode(text, shift):</code>, and inside it (4 spaces in front) make an empty string, <code>decoded = ""</code>.',
+                'Still inside the function, loop with <code>for character in text:</code>. Inside the loop (8 spaces), <code>if character.isalpha():</code> shifts letters, and <code>else:</code> keeps everything else as it is. Lines inside those have 12 spaces.',
+                'Shifting back means taking away: <code>- shift</code>, not <code>+ shift</code>. After the loop, <code>return decoded</code> (4 spaces). Then, with no spaces in front, <code>print(decode(text, 3))</code>.'
             ],
-            try: ['with open("notebook/note1.txt") as file:\n    text = file.read()\n\ndef decode(text, shift):\n    decoded = ""\n    for character in text:\n        if character.isalpha():\n            decoded += chr((ord(character) - 65 - shift) % 26 + 65)\n        else:\n            decoded += character\n    return decoded\n\nprint(decode(text, 3))'],
+            typeIt: 'with open("notebook/note1.txt") as file:\n    text = file.read()\ndef decode(text, shift):\n    decoded = ""\n    for character in text:\n        if character.isalpha():\n            decoded += chr((ord(character) - 65 - shift) % 26 + 65)\n        else:\n            decoded += character\n    return decoded\nprint(decode(text, 3))',
             learn: 'Decoding is just shifting the other way, so the maths uses <code>- shift</code> instead of <code>+ shift</code>. A <code>for</code> loop over a string gives you one character at a time, and <code>.isalpha()</code> is True only for letters. <code>decoded += x</code> is short for <code>decoded = decoded + x</code>: it sticks <code>x</code> on the end.',
             clue: 'Page one has a code word. Add it to the Evidence Board →',
             evidence: ['codeword'],
@@ -136,14 +136,14 @@ CASES.push({
         {
             id: 'note2', title: 'Brute force page two',
             story: 'Page two has <b>no key</b>! But a Caesar shift can only be 0 to 25 places (a shift of 26 takes every letter all the way round, back to where it started). So there are only 26 possible keys, and Python can try them all in a blink. Trying every possible key is called a <b>brute force</b> attack.<br><br><code>range(26)</code> gives the numbers 0, 1, 2 ... 25. It stops <b>before</b> 26. So <code>for key in range(26):</code> goes round the loop 26 times, with a different <code>key</code> each time.<br><br>Byte reckons the Jackdaw always mentions the <b>MAGPIE</b>... 🐕',
-            task: 'Keep your <code>decode()</code> function from page one: the code below uses it. Try every shift from 0 to 25 on <code>notebook/note2.txt</code>, find the one that makes sense, and print that message with its key.',
+            task: 'Read <code>notebook/note2.txt</code> and try every shift from 0 to 25 on it. Print the attempt that has MAGPIE in it, along with its key.<br><br>Keep your <code>decode()</code> function from page one! You\'ll use it again, and every time you press Run, Python starts again from the top.',
             tools: ['for', 'in', 'f-strings'],
             hints: [
-                '<code>for key in range(26):</code> repeats with key = 0, 1, 2 ... 25.',
-                'Inside the loop, print the key AND the decoded text so you can spot the right one: <code>print(key, decode(text, key))</code>',
-                'Even better, let Python spot it: <code>if "MAGPIE" in attempt:</code> only lets through the attempt with MAGPIE in it.'
+                'Read the file into <code>text</code>, just like page one. Then <code>for key in range(26):</code> repeats with key = 0, 1, 2 ... 25. Don\'t forget the colon at the end.',
+                'Inside the loop (4 spaces in front), <code>attempt = decode(text, key)</code> tries one key.',
+                'Still inside the loop, <code>if "MAGPIE" in attempt:</code>, and under that (8 spaces) <code>print(key, attempt)</code>, so it only prints the attempt that makes sense.'
             ],
-            try: ['with open("notebook/note2.txt") as file:\n    text = file.read()\n\nfor key in range(26):\n    attempt = decode(text, key)\n    if "MAGPIE" in attempt:\n        print(key, attempt)'],
+            typeIt: 'with open("notebook/note2.txt") as file:\n    text = file.read()\nfor key in range(26):\n    attempt = decode(text, key)\n    if "MAGPIE" in attempt:\n        print(key, attempt)',
             learn: '<code>range(26)</code> counts from 0 up to 25. With only 26 possible keys, a Caesar cipher is easy to <b>brute force</b>: a loop tries them all. Real encryption has so many keys that even supercomputers can\'t try them all!',
             clue: 'You found the key AND the hideout. Add them both to the Evidence Board →',
             evidence: ['key', 'hideout'],

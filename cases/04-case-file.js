@@ -137,41 +137,41 @@ CASES.push({
 
     missions: [
         {
-            id: 'casefile', title: 'Open the case file', tutorial: true,
+            id: 'casefile', title: 'Open the case file',
             story: 'Until now, everything your code used was typed into the code itself. But real evidence arrives in <b>files</b>: documents saved on the computer, like the ones Inspector Ada copied for you. Python can open a file and read what\'s inside.<br><br><code>with open("case_file.txt") as file:</code> opens the file and gives it a name, <code>file</code>, so the lines below can use it. (You choose that name too!) The lines indented underneath can read the file. When they finish, <code>with</code> closes the file for you, which is good detective manners.<br><br><code>file.read()</code> reads everything in the file into one big string.',
-            task: 'Open <code>case_file.txt</code>, read it with <code>.read()</code> and print what it says.',
+            task: 'Type the three lines below into your code, then press <kbd>▶ Run</kbd>. They open <code>case_file.txt</code>, read it with <code>.read()</code> and print what it says.<br><br>Watch the spaces: only the middle line has 4 spaces in front.',
             tools: ['open'],
             hints: [
                 'The file name goes in quotes inside <code>open()</code>, and the <code>with</code> line ends with a colon.',
-                'Lines inside the <code>with</code> need 4 spaces in front. The <code>print</code> can go after, with no spaces.'
+                'Lines inside the <code>with</code> need 4 spaces in front. The <code>print</code> goes after, with no spaces.'
             ],
-            try: ['with open("case_file.txt") as file:\n    text = file.read()\nprint(text)'],
+            typeIt: 'with open("case_file.txt") as file:\n    text = file.read()\nprint(text)',
             learn: '<code>with open("case_file.txt") as file:</code> opens the file and calls it <code>file</code>. <code>file.read()</code> gives you everything inside as one big string.',
             done: e => opened(e, '/case_file.txt')
         },
         {
-            id: 'diary', title: 'Read the diary', tutorial: true,
+            id: 'diary', title: 'Read the diary',
             story: 'The case file says the diary is in a <b>folder</b> called <code>usb</code>. Folders hold files, like drawers in a filing cabinet. To open a file inside a folder, write the folder name, a slash, then the file name: <code>"usb/diary.txt"</code>.',
-            task: 'Open <code>usb/diary.txt</code> and print the whole thing.',
+            task: 'Type the three lines below at the bottom of your code, then press <kbd>▶ Run</kbd>. They open <code>usb/diary.txt</code> and print the whole thing.',
             tools: ['open'],
             hints: [
-                'It\'s the same as before, but with a different file name.',
-                '<code>with open("usb/diary.txt") as file:</code>'
+                'It\'s the same shape as before, but with a different file name, and a variable called <code>diary</code> instead of <code>text</code>.',
+                'The middle line needs 4 spaces in front. The <code>print</code> line has none.'
             ],
-            try: ['with open("usb/diary.txt") as file:\n    diary = file.read()\nprint(diary)'],
+            typeIt: 'with open("usb/diary.txt") as file:\n    diary = file.read()\nprint(diary)',
             learn: 'A path like <code>usb/diary.txt</code> means "the file diary.txt inside the folder usb". The slash <code>/</code> separates folders from files.',
             done: e => printed(e, DIARY_LINES[0], DIARY_LINES[DIARY_LINES.length - 1]) && uses(e, /open\s*\(/)
         },
         {
             id: 'count', title: 'How long is it?',
             story: 'That diary goes on and on! How many lines does it have?<br><br><code>file.readlines()</code> reads a file as a <b>list</b>, with one line of the file in each item. And you already know how to count the items in a list: <code>len()</code>.',
-            task: 'Read the diary with <code>readlines()</code> and print how many lines it has.',
+            task: 'Type the three lines below at the bottom of your code, then press <kbd>▶ Run</kbd>. They read the diary again, this time with <code>readlines()</code>, and print how many lines it has.<br><br>The number is at the very end of the Output panel, under the diary.',
             tools: ['open', 'len', 'lists'],
             hints: [
                 '<code>lines = file.readlines()</code> gives you a list. It goes inside the <code>with</code>, with 4 spaces in front.',
-                'Then <code>print(len(lines))</code>'
+                'The last line has no spaces in front, and ends with <code>))</code>: one bracket for <code>len(</code> and one for <code>print(</code>.'
             ],
-            try: ['with open("usb/diary.txt") as file:\n    lines = file.readlines()\nprint(len(lines))'],
+            typeIt: 'with open("usb/diary.txt") as file:\n    lines = file.readlines()\nprint(len(lines))',
             learn: '<code>readlines()</code> turns a file into a list, one item per line. Then <code>len()</code> tells you how many lines there are.',
             clue: 'Add the number of lines to the Evidence Board →',
             evidence: ['lines'],
@@ -180,17 +180,18 @@ CASES.push({
         {
             id: 'line42', title: 'The secret on line 42',
             story: 'Did you spot it? The Magpie hides the big secret on <b>line 42</b>. Counting 42 lines by hand is no job for a detective.<br><br>To get one item out of a list, put its position in square brackets after the list\'s name, like <code>lines[5]</code>. But careful: Python starts counting at <b>0</b>, so line 1 is <code>lines[0]</code>, line 2 is <code>lines[1]</code>...',
-            task: 'Print <b>just</b> line 42 of the diary, and nothing else.',
+            task: 'Type the line below at the bottom of your code, then press <kbd>▶ Run</kbd>. It prints line 42 of the diary.<br><br>Your <code>print(diary)</code> line still shows the whole diary first. That\'s fine! Line 42 appears on its own at the very bottom of the Output panel, under the diary.',
             tools: ['lists', 'enumerate', 'strip'],
             hints: [
-                'If line 1 is <code>lines[0]</code>, then line 42 is <code>lines[41]</code>.',
-                'Only print line 42, not the whole diary. Add <code>.strip()</code> to remove the invisible "new line" character at the end of the line.'
+                'Your code already has a list called <code>lines</code>, from the last objective. This line uses it, so keep the lines above.',
+                'If line 1 is <code>lines[0]</code>, then line 42 is <code>lines[41]</code>. <code>.strip()</code> removes the invisible "new line" character at the end of the line.'
             ],
-            try: ['with open("usb/diary.txt") as file:\n    lines = file.readlines()\nprint(lines[41].strip())'],
+            typeIt: 'print(lines[41].strip())',
             learn: 'Lists count from 0, so the 42nd line is <code>lines[41]</code>. Another way is <code>for number, line in enumerate(lines, 1):</code>, which counts from 1 for you.',
             clue: 'That\'s the Magpie\'s next target! Add it to the Evidence Board →',
             evidence: ['target'],
-            done: e => printed(e, TARGET_LINE) && !e.stdout.includes(DIARY_LINES[40]) && !e.stdout.includes(DIARY_LINES[42])
+            // The whole diary is printed above it, so check they picked out the line by its position
+            done: e => uses(e, /\[\s*41\s*\]|enumerate/) && printed(e, TARGET_LINE)
         },
         {
             id: 'report', title: 'File your report', final: true,

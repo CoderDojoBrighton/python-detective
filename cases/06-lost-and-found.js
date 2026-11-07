@@ -103,8 +103,9 @@ CASES.push({
         'print(os.listdir("/evidence/laptop"))': 'Gets a list of everything inside the folder <code>"/evidence/laptop"</code> (files and folders) and shows it.',
         'for folder, subfolders, files in os.walk("/evidence/laptop"):': 'A <b>loop</b> that visits <code>/evidence/laptop</code> and every folder inside it, however deep. Each time round, <code>folder</code> is the path of the folder it\'s visiting, <code>subfolders</code> is a list of the folders inside it, and <code>files</code> is a list of the file names in it.',
         'if "plans.txt" in files:': 'Checks whether <code>"plans.txt"</code> is one of the file names in this folder. The indented lines below only run in the folder where it is.',
-        'print(os.path.join(folder, "plans.txt"))': 'Glues the folder\'s path and <code>"plans.txt"</code> together, with a <code>/</code> in between, to make the file\'s full path. Then shows it.',
-        'with open(os.path.join(folder, "plans.txt")) as file:': 'Builds the full path to <code>plans.txt</code> with <code>os.path.join()</code>, then opens that file and calls it <code>file</code> in the indented line below.',
+        'plans_path = os.path.join(folder, "plans.txt")': 'Glues the folder\'s path and <code>"plans.txt"</code> together, with a <code>/</code> in between, to make the file\'s full path. It keeps the path in a variable called <code>plans_path</code>, so you can use it again later.',
+        'print(plans_path)': 'Shows the full path. It has 8 spaces in front, the same as the line above, so it\'s inside the <code>if</code> too.',
+        'with open(plans_path) as file:': 'Opens the file whose path is inside <code>plans_path</code>. There are no quotes around <code>plans_path</code>, so Python uses what\'s in the variable, not the word itself. The file is called <code>file</code> in the indented line below.',
         'print(file.read())': 'Reads everything in the file as one string, and shows it.',
         'photo_count = 0': 'Makes a <b>counter</b> called <code>photo_count</code> and starts it at 0. It will go up by 1 for every photo found.',
         'if name.endswith(".jpg"):': 'Checks whether the file name <b>ends with</b> <code>".jpg"</code>. A name like <code>jpg_notes.txt</code> has "jpg" in it but doesn\'t end with it, so it gets skipped.',
@@ -121,15 +122,15 @@ CASES.push({
 
     missions: [
         {
-            id: 'here', title: 'What\'s in your folder?', tutorial: true,
+            id: 'here', title: 'What\'s in your folder?',
             story: 'Before you can open a file, you need to know it\'s there, and what it\'s called! Python has a <b>module</b> for this called <code>os</code>. A module is a toolkit of extra commands. You load it with <code>import os</code> at the top of your code, and then you can use its commands, which all start with <code>os.</code><br><br><code>os.listdir()</code> (short for "list directory", and directory is another word for folder) gives you a <b>list</b> of everything in a folder. It\'s like opening the folder on your computer.',
-            task: 'Make sure <code>import os</code> is at the top of your code, then print <code>os.listdir()</code> to see what\'s in your own folder.',
+            task: 'Print <code>os.listdir()</code> to see what\'s in your own folder. <code>import os</code> is already at the top of your code.',
             tools: ['os'],
             hints: [
-                'Put <code>import os</code> at the top of your code.',
-                '<code>print(os.listdir())</code> with nothing in the brackets means "this folder".'
+                'Keep <code>import os</code> at the top. Without it, Python doesn\'t know what <code>os</code> is.',
+                '<code>print(os.listdir())</code> with nothing in the inner brackets means "this folder". Count the brackets: there are two pairs, so the line ends with <code>))</code>.'
             ],
-            try: ['import os\nprint(os.listdir())'],
+            typeIt: 'print(os.listdir())',
             learn: '<code>os.listdir()</code> gives you a list of everything in a folder: files and other folders. Empty brackets mean "the folder I\'m in now".',
             done: e => listed(e, HOME)
         },
@@ -139,37 +140,37 @@ CASES.push({
             task: 'Print what\'s inside <code>/evidence/laptop</code>.',
             tools: ['os'],
             hints: [
-                'Put the folder\'s path inside the brackets, as a string (in quotes).',
+                'The folder\'s path goes inside the brackets, as a string, so it needs quotes around it.',
                 '<code>print(os.listdir("/evidence/laptop"))</code>. Notice the folder called <code>.cache</code>? Names starting with a dot are normally hidden!'
             ],
-            try: ['print(os.listdir("/evidence/laptop"))'],
+            typeIt: 'print(os.listdir("/evidence/laptop"))',
             learn: 'Give <code>os.listdir()</code> a path to look somewhere else. Folders whose names start with <code>.</code> are "hidden" ones: computers often hide them from you, but Python still sees them.',
             done: e => listed(e, LAPTOP)
         },
         {
             id: 'walk', title: 'Search every folder',
             story: 'The laptop has folders inside folders inside folders. You could <code>listdir</code> each one by hand, but that would take ages. <code>os.walk()</code> does it for you. It visits the folder you give it, then every folder inside that, then every folder inside <b>those</b>, all the way down.<br><br>You use it in a <code>for</code> loop that goes round once per folder. Each time round it hands you <b>three</b> things, so the loop has three variable names:<br><code>for folder, subfolders, files in os.walk("/evidence/laptop"):</code><br><code>folder</code> is the path of the folder it\'s visiting, <code>subfolders</code> is a list of the folders inside it, and <code>files</code> is a list of its file names. You choose those names. These ones say what each one holds.',
-            task: 'Use <code>os.walk()</code> (or <code>glob</code>) to find the file called <code>plans.txt</code> and print its full path.',
+            task: 'Use <code>os.walk()</code> to find the file called <code>plans.txt</code>. Keep its full path in a variable called <code>plans_path</code>, and print it.',
             tools: ['os.walk', 'if'],
             hints: [
                 'Start with <code>for folder, subfolders, files in os.walk("/evidence/laptop"):</code>. That loop runs once for every folder on the laptop.',
-                'Inside that loop, check <code>if "plans.txt" in files:</code>',
-                'A file name on its own doesn\'t say where the file is. <code>os.path.join(folder, "plans.txt")</code> glues the folder and the file name together with a <code>/</code> to make the full path.'
+                'Inside that loop, with 4 spaces in front, check <code>if "plans.txt" in files:</code>',
+                'A file name on its own doesn\'t say where the file is. Inside the <code>if</code>, with 8 spaces in front, <code>plans_path = os.path.join(folder, "plans.txt")</code> glues the folder and the file name together to make the full path. Then <code>print(plans_path)</code>.'
             ],
-            try: ['for folder, subfolders, files in os.walk("/evidence/laptop"):\n    if "plans.txt" in files:\n        print(os.path.join(folder, "plans.txt"))'],
+            typeIt: 'for folder, subfolders, files in os.walk("/evidence/laptop"):\n    if "plans.txt" in files:\n        plans_path = os.path.join(folder, "plans.txt")\n        print(plans_path)',
             learn: '<code>os.walk()</code> visits a folder and <b>every</b> folder inside it. Each time round the loop you get the folder\'s path, its subfolders and its files. <code>os.path.join()</code> glues folder and file names into one full path, putting the <code>/</code> in the right places.',
-            done: e => uses(e, /os\.walk|glob/) && printed(e, 'plans.txt')
+            done: e => uses(e, /os\.walk|glob/) && printed(e, PLANS_PATH)
         },
         {
             id: 'read', title: 'Read the plan',
             story: 'Found it, hidden deep inside the browser\'s cache: a folder of leftover web bits that nobody ever looks in. Sneaky! Watch out, though. There\'s also an old plan lying around, <code>plans_old.txt</code>, and that one was cancelled.',
-            task: 'Open the <code>plans.txt</code> you found (use its full path) and print what it says.',
+            task: 'Open <code>plans.txt</code> using the path in <code>plans_path</code>, and print what it says.<br><br>Keep the lines above! Every time you press Run, Python starts again from the top, so it needs your <code>os.walk</code> loop to make <code>plans_path</code>.',
             tools: ['open'],
             hints: [
-                'Copy the full path you printed and put it in <code>open("...")</code>, then <code>print(file.read())</code>.',
-                'Or, inside your <code>os.walk</code> loop, open <code>os.path.join(folder, "plans.txt")</code> straight away.'
+                'Put <code>plans_path</code> inside <code>open()</code> with no quotes. With quotes, Python would look for a file called plans_path!',
+                '<code>with open(plans_path) as file:</code> then <code>print(file.read())</code> on the next line, with 4 spaces in front so it\'s inside the <code>with</code>.'
             ],
-            try: ['for folder, subfolders, files in os.walk("/evidence/laptop"):\n    if "plans.txt" in files:\n        with open(os.path.join(folder, "plans.txt")) as file:\n            print(file.read())'],
+            typeIt: 'with open(plans_path) as file:\n    print(file.read())',
             learn: 'Once you know a file\'s full path, <code>open()</code> can read it from anywhere.',
             clue: 'The plan says where the Magpie is meeting their accomplice. Add it to the Evidence Board →',
             evidence: ['place'],
@@ -178,14 +179,14 @@ CASES.push({
         {
             id: 'photos', title: 'Count the photos',
             story: 'The lab wants to check every photo for clues. Photo file names end in <code>.jpg</code>. But careful: screenshots end in <code>.png</code>, and one sneaky note just has "jpg" somewhere in its name.<br><br>So <code>"jpg" in name</code> isn\'t a good enough test. Strings have a better one: <code>name.endswith(".jpg")</code> is True only when the name <b>ends</b> with <code>.jpg</code>.<br><br>To count them, use a <b>counter</b>: a variable that starts at 0 and goes up by 1 each time you find a photo.',
-            task: 'Count every file on the laptop whose name <b>ends with</b> <code>.jpg</code> and print the total.',
+            task: 'Count every file on the laptop whose name <b>ends with</b> <code>.jpg</code>, and print the total.',
             tools: ['os.walk', 'startswith'],
             hints: [
-                'Make your counter before the loop: <code>photo_count = 0</code>',
-                'Each folder has a list of <code>files</code>, so you need a loop inside your loop: <code>for name in files:</code>. Then <code>if name.endswith(".jpg"):</code> add 1 to <code>photo_count</code>.',
-                'Print <code>photo_count</code> <b>after</b> the loops have finished, so put it right at the left edge, not indented.'
+                'Make your counter before the loop: <code>photo_count = 0</code>. Then loop over the laptop with <code>os.walk</code>, like before.',
+                'Each folder has a list of <code>files</code>, so you need a loop inside your loop: <code>for name in files:</code>. Then <code>if name.endswith(".jpg"):</code> add 1 to <code>photo_count</code>. Each line goes 4 more spaces in.',
+                'Print <code>photo_count</code> <b>after</b> the loops have finished, so put it right at the left edge, with no spaces in front.'
             ],
-            try: ['photo_count = 0\nfor folder, subfolders, files in os.walk("/evidence/laptop"):\n    for name in files:\n        if name.endswith(".jpg"):\n            photo_count = photo_count + 1\nprint(photo_count)'],
+            typeIt: 'photo_count = 0\nfor folder, subfolders, files in os.walk("/evidence/laptop"):\n    for name in files:\n        if name.endswith(".jpg"):\n            photo_count = photo_count + 1\nprint(photo_count)',
             learn: '<code>.endswith(".jpg")</code> checks the end of a string (and <code>.startswith()</code> checks the start). A counter like <code>photo_count = photo_count + 1</code> inside a loop adds up how many things matched.',
             clue: 'Add the number of photos to the Evidence Board →',
             evidence: ['photos'],

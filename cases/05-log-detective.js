@@ -46,6 +46,7 @@ const fmt = t => `${pad(Math.floor(t / 3600))}:${pad(Math.floor(t / 60) % 60)}:$
 const LINES = swipes.map(s => `2026-10-20 ${fmt(s.t)} DOOR=${s.door} BADGE=${s.badge} RESULT=${s.result}`);
 const MAGPIE_DENIED_LINE = LINES.find(l => l.includes(MAGPIE) && l.includes('DENIED'));
 const MAGPIE_IN_LINE = LINES.find(l => l.includes(MAGPIE) && l.includes('GRANTED'));
+const DENIED_LINES = LINES.filter(l => l.includes('DENIED'));
 const STAFF_TOP = STAFF[STAFF_DENIED.indexOf(Math.max(...STAFF_DENIED))];
 
 CASES.push({
@@ -121,61 +122,65 @@ CASES.push({
 
     missions: [
         {
-            id: 'peek', title: 'Peek at the log', tutorial: true,
+            id: 'peek', title: 'Peek at the log',
             story: 'The log is a text file with over a hundred lines. Each line is one badge swipe: the date, the time, the door, the badge number and whether the door opened. That\'s far too much to read in one go, so detectives start by peeking at the <b>first few lines</b>.<br><br>Remember <code>file.readlines()</code> from the last case? It reads a file into a <b>list</b>, one line per item. You can take part of a list with a <b>slice</b>: <code>lines[:5]</code> means "the items from the start, up to item 5". Then a <code>for</code> loop can print each one.',
-            task: 'Open <code>pavilion/doors.log</code>, read its lines into a list and print just the first 5.',
+            task: 'Open <code>pavilion/doors.log</code>, read its lines into a list called <code>lines</code>, and print just the first 5.',
             tools: ['open', 'slicing'],
             hints: [
-                '<code>file.readlines()</code> gives you a list of lines. Keep it in a variable: <code>lines = file.readlines()</code>',
-                '<code>lines[:5]</code> is the first 5 items of the list. Loop over it with <code>for line in lines[:5]:</code> and print each <code>line</code>.'
+                'Open the file the same way you opened the diary: <code>with open("pavilion/doors.log") as file:</code>. Then <code>lines = file.readlines()</code> goes inside it, with 4 spaces in front.',
+                '<code>lines[:5]</code> is the first 5 items of the list. Loop over it with <code>for line in lines[:5]:</code> and print each <code>line</code>, with 4 spaces in front.'
             ],
-            try: ['with open("pavilion/doors.log") as file:\n    lines = file.readlines()\n\nfor line in lines[:5]:\n    print(line.strip())'],
+            typeIt: 'with open("pavilion/doors.log") as file:\n    lines = file.readlines()\nfor line in lines[:5]:\n    print(line.strip())',
             learn: '<code>lines[:5]</code> is a <b>slice</b>: the items from the start up to (but not including) number 5. That\'s items 0, 1, 2, 3 and 4, because Python counts from 0. <code>.strip()</code> removes the invisible "new line" character at the end of each line, so you don\'t get blank lines in between.',
             done: e => printed(e, LINES[0])
         },
         {
             id: 'denied', title: 'Only the refused swipes',
-            story: 'Most swipes end in <code>RESULT=GRANTED</code>: the badge worked and the door opened. Some end in <code>RESULT=DENIED</code>: the door said <b>no</b>. Those are the ones we care about.<br><br>Every time you press Run, Python starts fresh. So keep the lines at the top that open the log and make <code>lines</code>, and add your new code underneath.',
-            task: 'Loop over every line and print <b>only</b> the lines that contain <code>DENIED</code>.',
+            story: 'Most swipes end in <code>RESULT=GRANTED</code>: the badge worked and the door opened. Some end in <code>RESULT=DENIED</code>: the door said <b>no</b>. Those are the ones we care about.<br><br>Every time you press Run, Python starts fresh. So keep the lines above that open the log and make <code>lines</code>, and add your new code underneath.',
+            task: 'Loop over every line in <code>lines</code> and print <b>only</b> the ones that contain <code>DENIED</code>.',
             tools: ['for', 'in', 'if', 'strip'],
             hints: [
                 'Loop with <code>for line in lines:</code>. Inside the loop, use <code>if</code> to decide whether to print.',
-                '<code>"DENIED" in line</code> is True when the word DENIED is somewhere in the line.'
+                '<code>"DENIED" in line</code> is True when the word DENIED is somewhere in the line. Don\'t forget the colons at the end of the <code>for</code> and <code>if</code> lines.',
+                'The <code>if</code> line needs 4 spaces in front (it\'s inside the loop). The <code>print</code> line needs 8 (it\'s inside the <code>if</code>).'
             ],
-            try: ['for line in lines:\n    if "DENIED" in line:\n        print(line.strip())'],
+            typeIt: 'for line in lines:\n    if "DENIED" in line:\n        print(line.strip())',
             learn: 'A <code>for</code> loop with an <code>if</code> inside is a <b>filter</b>. The loop looks at every line, and the <code>if</code> only lets through the ones you care about. Detectives use this all the time!',
-            done: e => uses(e, /DENIED/) && printed(e, MAGPIE_DENIED_LINE) && !e.stdout.includes('RESULT=GRANTED')
+            // The first 5 lines are still printed above, so check every DENIED line is there rather than "only"
+            done: e => uses(e, /DENIED/) && printed(e, ...DENIED_LINES)
         },
         {
             id: 'count', title: 'Count the refusals per badge',
             story: 'There are lots of DENIED lines, and counting by eye is how detectives make mistakes! We need a score for every badge. Python has the perfect tool: a <b>dictionary</b>.<br><br>A dictionary is like a list, but instead of numbered slots, each value has a <b>key</b>: a label you look it up by. Ours will use badge numbers as keys, and the number of refusals as values, like <code>{"B-0001": 2, "B-0002": 5}</code>. Curly brackets make a dictionary, so <code>refusals = {}</code> makes an empty one, ready to fill.<br><br>To get the badge out of a line, <code>line.split()</code> chops the line into a list of words at every space. Door names like East Wing have spaces too, so count from the <b>end</b>: the badge is always the second-to-last word, <code>words[-2]</code>.',
-            task: 'For every DENIED line, pull out the badge number and add 1 to its score in a dictionary. Print the dictionary. Which badge was refused the most?',
+            task: 'For every DENIED line, pull out the badge number and add 1 to its score in a dictionary called <code>refusals</code>. Print the dictionary. Which badge was refused the most?',
             tools: ['split', 'dict'],
             hints: [
                 '<code>words = line.split()</code> turns a line into a list of words ending <code>[..., "Wing", "BADGE=B-1042", "RESULT=DENIED"]</code>. So <code>words[-2]</code> is <code>"BADGE=B-1042"</code>.',
                 '<code>"BADGE=B-1042".split("=")</code> chops at the <code>=</code> and gives <code>["BADGE", "B-1042"]</code>. Add <code>[1]</code> to take the second item, <code>"B-1042"</code>.',
-                'Make <code>refusals = {}</code> before the loop. Then for each badge: <code>refusals[badge] = refusals.get(badge, 0) + 1</code>'
+                'Make <code>refusals = {}</code> before the loop, so the dictionary is only made once. Then for each badge: <code>refusals[badge] = refusals.get(badge, 0) + 1</code>. <code>refusals.get(badge, 0)</code> is the score so far (0 the first time).'
             ],
-            try: ['refusals = {}\nfor line in lines:\n    if "DENIED" in line:\n        words = line.split()\n        badge = words[-2].split("=")[1]\n        refusals[badge] = refusals.get(badge, 0) + 1\n\nprint(refusals)\nprint("Most refused:", max(refusals, key=refusals.get))'],
+            typeIt: 'refusals = {}\nfor line in lines:\n    if "DENIED" in line:\n        words = line.split()\n        badge = words[-2].split("=")[1]\n        refusals[badge] = refusals.get(badge, 0) + 1\nprint(refusals)\nprint("Most refused:", max(refusals, key=refusals.get))',
             learn: 'A <b>dictionary</b> (<code>{}</code>) stores a value for each key. <code>refusals.get(badge, 0)</code> looks up a badge\'s score so far, or gives 0 if it isn\'t in the dictionary yet. Add 1, store it back, and that swipe is counted! Negative positions count from the end of a list: <code>[-1]</code> is the last item, <code>[-2]</code> the one before.',
             clue: 'One badge was refused far more than any other. Add it to the Evidence Board →',
             evidence: ['badge'],
-            done: e => uses(e, /\{\s*\}|dict\s*\(|Counter/) && printed(e, MAGPIE)
+            // The DENIED lines printed above already contain the badge, so look for it on a line of its own making
+            done: e => uses(e, /\{\s*\}|dict\s*\(|Counter/) && e.stdout.split('\n').some(l => l.includes(MAGPIE) && !l.includes('RESULT='))
         },
         {
             id: 'door', title: 'Which door gave in?',
             story: 'After all those refusals, the suspicious badge finally got a <code>GRANTED</code>. Which door let the Magpie in?<br><br>This time a line has to pass <b>two</b> tests: it must contain the badge number, <b>and</b> it must contain the word GRANTED. Python\'s <code>and</code> joins two tests together, and the <code>if</code> only runs when both are True.',
-            task: 'Print the line (or lines) where the suspicious badge was <b>GRANTED</b>, and nothing else.',
+            task: 'Loop over <code>lines</code> again and print the line where the suspicious badge was <b>GRANTED</b>.<br><br>Your earlier code still prints its lines first, so your answer will be at the bottom of the Output panel.',
             tools: ['if', 'in'],
             hints: [
-                'You need two things to be true at once. Python has <code>and</code> for that.',
-                '<code>if "B-...." in line and "GRANTED" in line:</code> (put in the badge you found).'
+                'You need two things to be true at once. Python has <code>and</code> for that. Each test needs its own <code>in line</code>.',
+                '<code>if "B-...." in line and "GRANTED" in line:</code> (put in the badge you found). The <code>if</code> line needs 4 spaces in front, and the <code>print</code> line needs 8.'
             ],
-            try: [`for line in lines:\n    if "${MAGPIE}" in line and "GRANTED" in line:\n        print(line.strip())`],
+            typeIt: `for line in lines:\n    if "${MAGPIE}" in line and "GRANTED" in line:\n        print(line.strip())`,
             learn: '<code>and</code> lets an <code>if</code> check two things at once: both have to be True. There\'s also <code>or</code>, which only needs one of them to be True.',
             clue: 'Now you know which door the Magpie got through. Add it to the Evidence Board →',
             evidence: ['door'],
-            done: e => uses(e, /GRANTED/) && printed(e, MAGPIE_IN_LINE) && e.stdout.split('\n').filter(l => l.trim()).length <= 3
+            // None of the earlier code prints this line, and the badge has to be in the code
+            done: e => uses(e, /GRANTED/, new RegExp(MAGPIE)) && printed(e, MAGPIE_IN_LINE)
         },
         {
             id: 'report', title: 'File your report', final: true,

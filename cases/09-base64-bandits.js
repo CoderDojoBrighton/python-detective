@@ -102,11 +102,10 @@ CASES.push({
             task: 'Read <code>boathouse/note.b64</code>, decode it with <code>base64.b64decode()</code>, and print the message as text.',
             tools: ['base64', 'open'],
             hints: [
-                'Start with <code>import base64</code> at the top.',
-                '<code>base64.b64decode(text)</code> gives you <b>bytes</b> (they print like <code>b\'...\'</code>).',
-                'Turn the bytes into a normal string with <code>.decode()</code>: <code>print(base64.b64decode(text).decode())</code>'
+                'Start with <code>import base64</code> to load the base64 toolkit. Then read the file into <code>text</code>. The reading line needs 4 spaces in front, inside the <code>with</code>.',
+                '<code>base64.b64decode(text)</code> gives you <b>bytes</b> (they print like <code>b\'...\'</code>). Add <code>.decode()</code> on the end to turn them into a normal string, and print that. Count your brackets!'
             ],
-            try: ['import base64\n\nwith open("boathouse/note.b64") as file:\n    text = file.read()\n\nprint(base64.b64decode(text).decode())'],
+            typeIt: 'import base64\nwith open("boathouse/note.b64") as file:\n    text = file.read()\nprint(base64.b64decode(text).decode())',
             learn: '<code>base64.b64decode()</code> turns base64 into <b>bytes</b>, and <code>.decode()</code> turns bytes into a string. Base64 isn\'t secret: anyone can decode it!',
             clue: 'The note says WHEN they\'re moving the loot. Add the day to the Evidence Board →',
             evidence: ['day'],
@@ -118,11 +117,11 @@ CASES.push({
             task: 'Read <code>boathouse/door.bin</code>, turn each group of 8 binary digits into a letter, and print the message.',
             tools: ['split', 'ord/chr', 'base64'],
             hints: [
-                '<code>file.read().split()</code> chops the file into a list of 8-digit groups, wherever there\'s a space.',
-                '<code>int("01000001", 2)</code> reads a string as a base-2 (binary) number, giving 65.',
-                'Loop over the groups and add <code>chr(int(group, 2))</code> to a string each time.'
+                '<code>file.read().split()</code> chops the file into a list of 8-digit groups, wherever there\'s a space. Keep that list in a variable called <code>groups</code>. That line has 4 spaces in front, inside the <code>with</code>.',
+                'Make an empty string, <code>message = ""</code>, then loop with <code>for group in groups:</code>',
+                'Inside the loop (4 spaces in front), <code>int(group, 2)</code> turns the binary into a number, and <code>chr()</code> turns that into a letter. Add it with <code>message += ...</code>, then print <code>message</code> after the loop, with no spaces in front.'
             ],
-            try: ['with open("boathouse/door.bin") as file:\n    groups = file.read().split()\n\nmessage = ""\nfor group in groups:\n    message += chr(int(group, 2))\nprint(message)'],
+            typeIt: 'with open("boathouse/door.bin") as file:\n    groups = file.read().split()\nmessage = ""\nfor group in groups:\n    message += chr(int(group, 2))\nprint(message)',
             learn: '<code>int(text, 2)</code> reads binary. Binary is counting with only two digits: 1, 10, 11, 100... Each place is worth double the one before: 128, 64, 32, 16, 8, 4, 2, 1.',
             clue: 'That\'s the door code! Add it to the Evidence Board →',
             evidence: ['door'],
@@ -134,10 +133,10 @@ CASES.push({
             task: 'Read <code>boathouse/receipt.hex</code>, decode it with <code>bytes.fromhex()</code>, and print what it says.',
             tools: ['base64'],
             hints: [
-                '<code>bytes.fromhex(text)</code> turns hex into bytes. It\'s built in, so it doesn\'t need an import!',
-                'Bytes need <code>.decode()</code> to become a string. There\'s an invisible "new line" at the end of the file, so <code>.strip()</code> it off first.'
+                '<code>bytes.fromhex(text)</code> turns hex into bytes. It\'s built in, so it doesn\'t need an import! Just like the base64 note, add <code>.decode()</code> to turn the bytes into text.',
+                'There\'s an invisible "new line" at the end of the file. Read it with <code>file.read().strip()</code> to take that off. Without it, <code>bytes.fromhex()</code> gets confused.'
             ],
-            try: ['with open("boathouse/receipt.hex") as file:\n    text = file.read().strip()\n\nprint(bytes.fromhex(text).decode())'],
+            typeIt: 'with open("boathouse/receipt.hex") as file:\n    text = file.read().strip()\nprint(bytes.fromhex(text).decode())',
             learn: '<code>bytes.fromhex()</code> decodes hex. Hex <code>ff</code> is 255, the biggest number one byte can hold.',
             clue: 'A shopping receipt! There\'s a bonus question about it in the 🏆 Bonus tab →',
             evidence: ['torch'],
@@ -146,18 +145,18 @@ CASES.push({
         {
             id: 'onion', title: 'Peel the onion',
             story: 'Decoding <code>onion.txt</code> once just gives you... more base64! The Magpie wrapped the secret up in layer after layer, like an onion 🧅. You don\'t know how many layers there are, so a <code>for</code> loop won\'t do: it needs something to count through.<br><br>A <b>while loop</b> is different. It keeps repeating <b>as long as</b> its test is True, and stops as soon as the test is False. So <code>while not text.startswith("FLAG{"):</code> means "keep going while the text does <b>not</b> start with <code>FLAG{</code>". Each time round, peel off one layer.',
-            task: 'Keep base64-decoding <code>boathouse/onion.txt</code> until you reach text that starts with <code>FLAG{</code>, then print it. Can you also count the layers?',
+            task: 'Keep base64-decoding <code>boathouse/onion.txt</code> until you reach text that starts with <code>FLAG{</code>, then print it. Can you also count the layers?<br><br>Keep the <code>import base64</code> line from the first objective. You\'ll need it again!',
             tools: ['base64', 'startswith'],
             hints: [
-                'A <code>while</code> loop repeats as long as its test is True: <code>while not text.startswith("FLAG{"):</code>',
-                'Inside the loop, replace text with its decoded version: <code>text = base64.b64decode(text).decode()</code>',
-                'Make sure you <code>.strip()</code> the newline off the file first, and print <code>text</code> AFTER the loop finishes.'
+                'Read the file into <code>text</code> with <code>.strip()</code>. A <code>while</code> loop keeps going as long as its test is True: <code>while not text.startswith("FLAG{"):</code>',
+                'Inside the loop (4 spaces in front), decode one layer and put it back in the same variable: <code>text = base64.b64decode(text).decode()</code>',
+                'To count the layers, set <code>layers = 0</code> before the loop and add <code>layers += 1</code> inside it. After the loop, with no spaces in front, print <code>layers</code> and <code>text</code>.'
             ],
-            try: ['import base64\n\nwith open("boathouse/onion.txt") as file:\n    text = file.read().strip()\n\nlayers = 0\nwhile not text.startswith("FLAG{"):\n    text = base64.b64decode(text).decode()\n    layers += 1\n\nprint(layers, "layers:", text)'],
+            typeIt: 'with open("boathouse/onion.txt") as file:\n    text = file.read().strip()\nlayers = 0\nwhile not text.startswith("FLAG{"):\n    text = base64.b64decode(text).decode()\n    layers += 1\nprint(layers, "layers:", text)',
             learn: 'A <code>while</code> loop is perfect when you don\'t know how many times to repeat. Just make sure something inside it changes, or it will loop forever!',
             clue: 'You\'ve found the flag! Add it to the Evidence Board →',
             evidence: ['flag'],
-            done: e => uses(e, /\bwhile\b/, /b64decode/) && printed(e, FLAG)
+            done: e => uses(e, /b64decode/) && printed(e, FLAG)
         },
         {
             id: 'report', title: 'File your report', final: true,

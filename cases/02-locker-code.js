@@ -65,41 +65,41 @@ CASES.push({
 
     missions: [
         {
-            id: 'digit1', title: 'Python the calculator', tutorial: true,
+            id: 'digit1', title: 'Python the calculator',
             story: 'Python is a brilliant calculator. Put a sum inside <code>print()</code> and it shows you the answer. Numbers don\'t need quotes: <code>print(10 + 5)</code> shows <code>15</code>, but <code>print("10 + 5")</code> just shows the text 10 + 5.<br><br>Some maths signs look different on a keyboard. <code>+</code> adds, <code>-</code> takes away, <code>*</code> (a star) multiplies and <code>/</code> divides.<br><br>But <code>/</code> always gives an answer with a decimal point, like <code>4.0</code>. A lock digit can\'t be 4.0! Two slashes, <code>//</code>, divide and give you a <b>whole number</b>.',
-            task: 'Work out <b>digit 1</b>: print <code>3600 // 900</code>.<br><br>The code below also saves the answer in a variable called <code>digit1</code>, so you can use it again later.',
+            task: 'Work out <b>digit 1</b>. Type the two lines below at the bottom of your code, then press <kbd>▶ Run</kbd>.<br><br>The first line saves the answer in a variable called <code>digit1</code>, so you can use it again later. The second line shows it.',
             tools: ['maths', 'print'],
             hints: [
-                'Two slashes <code>//</code> means "divide and give me a whole number".',
-                'Put the sum inside print: <code>print(3600 // 900)</code>'
+                'Two slashes <code>//</code> means "divide and give me a whole number". Type them right next to each other, with no space in between.',
+                'The second line, <code>print(digit1)</code>, has no quotes, so it shows what\'s <b>inside</b> the <code>digit1</code> box.'
             ],
-            try: ['digit1 = 3600 // 900\nprint(digit1)'],
+            typeIt: 'digit1 = 3600 // 900\nprint(digit1)',
             learn: '<code>//</code> divides and throws away anything after the decimal point, so <code>3600 // 900</code> is <code>4</code>, not <code>4.0</code>. You can print a sum straight away, or keep the answer in a variable to use later.',
             done: e => uses(e, /3600\s*\/\/\s*900/) && printed(e, String(D1))
         },
         {
-            id: 'digits', title: 'Remainders and powers', tutorial: true,
+            id: 'digits', title: 'Remainders and powers',
             story: 'Two more maths tricks will crack the other riddles.<br><br><code>%</code> gives the <b>remainder</b>: what\'s left over after dividing. Share 7 sweets between 2 people and they get 3 each, with 1 left over. So <code>7 % 2</code> is <code>1</code>. (In Python, <code>%</code> has nothing to do with percentages!)<br><br><code>**</code> means "to the power of": <code>3 ** 2</code> is 3 × 3, which is 9.',
-            task: 'Work out <b>digits 2, 3 and 4</b>. Save each answer in its own variable, then print them.<br><br>Good names say what\'s inside, so <code>digit2</code>, <code>digit3</code> and <code>digit4</code> are perfect. To print several things at once, put commas between them: <code>print(digit2, digit3, digit4)</code>.',
+            task: 'Work out <b>digits 2, 3 and 4</b>. Type the lines below at the bottom of your code, then press <kbd>▶ Run</kbd>.<br><br>Each answer goes in its own variable. Good names say what\'s inside, so <code>digit2</code>, <code>digit3</code> and <code>digit4</code> are perfect. To print several things at once, put commas between them.<br><br>Keep the <code>digit1</code> lines above! You\'ll need all four digits soon.',
             tools: ['maths', 'variables'],
             hints: [
-                'Digit 2 is <code>2026 % 7</code>.',
-                'Digit 3 needs brackets: <code>(15 + 27) * 2 - 77</code>. Digit 4 is <code>2 ** 3</code>.'
+                '<code>%</code> is Shift and 5 on most keyboards. <code>*</code> is Shift and 8.',
+                'Digit 3 needs both brackets: <code>(15 + 27)</code>. Digit 4 has two stars right next to each other: <code>2 ** 3</code>.'
             ],
-            try: ['digit2 = 2026 % 7\ndigit3 = (15 + 27) * 2 - 77\ndigit4 = 2 ** 3\nprint(digit2, digit3, digit4)'],
+            typeIt: 'digit2 = 2026 % 7\ndigit3 = (15 + 27) * 2 - 77\ndigit4 = 2 ** 3\nprint(digit2, digit3, digit4)',
             learn: '<code>%</code> gives the remainder and <code>**</code> does powers. Brackets work like in maths class: Python does the bit inside them first.',
             done: e => uses(e, /%/, /\*\*/) && printed(e, String(D2)) && printed(e, String(D3)) && printed(e, String(D4))
         },
         {
             id: 'combine', title: 'Build the combination',
             story: 'You have four digits, and the lock wants them side by side as one 4-digit code. But if you put numbers together with <code>+</code>, Python adds them up: <code>4 + 3</code> is <code>7</code>. That\'s no good!<br><br>Remember how <code>+</code> <b>joined</b> the scraps of the Magpie\'s note? That works for text (strings), not numbers. Python treats them as different things. <code>str()</code> turns a number into text: <code>str(4)</code> is <code>"4"</code>. Turn each digit into text, and then <code>+</code> joins them instead of adding.',
-            task: 'Make a variable called <code>combination</code> that joins the four digits as text, then print it:<br><code>combination = str(digit1) + str(digit2) + str(digit3) + str(digit4)</code><br><br>Each press of Run starts fresh, so the lines that make <code>digit1</code> to <code>digit4</code> must be in your code too, above this line.',
+            task: 'Type the two lines below at the bottom of your code, then press <kbd>▶ Run</kbd>. They make a variable called <code>combination</code> that joins the four digits as text, then print it.<br><br>Keep the lines above them! Every time you press Run, Python starts again from the top, so it needs those lines to make <code>digit1</code> to <code>digit4</code>.',
             tools: ['int/str', 'strings'],
             hints: [
-                'Got <code>22</code>? That\'s the digits <b>added up</b>. Wrap each one in <code>str()</code> so they join instead. A <b>NameError</b> means one of the digit variables isn\'t in your code, or is spelled differently.',
-                '<code>combination = str(digit1) + str(digit2) + str(digit3) + str(digit4)</code> then <code>print(combination)</code>'
+                'Each digit gets its own <code>str( )</code> around it, with a <code>+</code> in between: <code>str(digit1) + str(digit2)</code> and so on.',
+                'A <b>NameError</b> means one of the digit variables isn\'t in your code, or is spelled differently. Check the lines above!'
             ],
-            try: ['combination = str(digit1) + str(digit2) + str(digit3) + str(digit4)\nprint(combination)'],
+            typeIt: 'combination = str(digit1) + str(digit2) + str(digit3) + str(digit4)\nprint(combination)',
             learn: '<code>str(4)</code> turns the number 4 into the text <code>"4"</code>. Adding numbers does maths, but adding text joins it: <code>4 + 3</code> is <code>7</code>, but <code>"4" + "3"</code> is <code>"43"</code>.',
             clue: 'That\'s the combination! Add it to the Evidence Board →',
             evidence: ['combination'],
@@ -108,26 +108,26 @@ CASES.push({
         {
             id: 'alarm', title: 'Is it safe to open?',
             story: 'Byte spots a warning sticker: <i>"Alarm fitted. It goes off if the combination is more than 5000."</i><br><br>Programs can make decisions with <code>if</code>. An <code>if</code> line asks a yes or no question, like <code>if number > 5000:</code> ("is the number more than 5000?"). If the answer is yes, Python runs the lines underneath it. <code>else:</code> means "otherwise": its lines run when the answer is no.<br><br>Those lines underneath must be <b>indented</b>: pushed in with 4 spaces. That\'s how Python knows they belong to the <code>if</code> or the <code>else</code>.<br><br>One snag: <code>combination</code> holds <b>text</b>, and Python can\'t tell if text is more than 5000. <code>int()</code> turns text back into a number: <code>int("12")</code> is <code>12</code>.',
-            task: 'Use <code>if</code> and <code>else</code> to print <code>ALARM</code> if <code>int(combination)</code> is more than 5000, or <code>SAFE</code> if it isn\'t.',
+            task: 'Type the four lines below at the bottom of your code, then press <kbd>▶ Run</kbd>. They print <code>ALARM</code> if <code>int(combination)</code> is more than 5000, or <code>SAFE</code> if it isn\'t.<br><br>Watch the spaces! The two <code>print</code> lines start with 4 spaces. The <code>if</code> and <code>else</code> lines have none.',
             tools: ['if', 'int/str'],
             hints: [
                 'Start with <code>if int(combination) > 5000:</code> and don\'t forget the colon <code>:</code> at the end. The next line needs 4 spaces in front.',
                 'Under it, <code>print("ALARM")</code>. Then <code>else:</code> with no spaces in front, and <code>print("SAFE")</code> with 4 spaces in front.'
             ],
-            try: ['if int(combination) > 5000:\n    print("ALARM")\nelse:\n    print("SAFE")'],
+            typeIt: 'if int(combination) > 5000:\n    print("ALARM")\nelse:\n    print("SAFE")',
             learn: '<code>if</code> runs its indented lines only when its test is true, and <code>else</code> runs its lines when it isn\'t. The colon and the 4 spaces matter! <code>int("4378")</code> turns text back into a number you can compare.',
             done: e => uses(e, /\bif\b[^\n]*>/, /\belse\s*:/) && printed(e, 'SAFE')
         },
         {
             id: 'bus', title: 'The bus ticket',
             story: 'Click! The locker opens. Inside is a crumpled bus ticket. The bus number has been torn off, but someone has written: <i>"My bus = the first two digits of the combination + the last two digits."</i><br><br>First, turn the combination into a number: <code>number = int(combination)</code>. Then two tricks you already know can pull it apart. <code>number // 100</code> divides by 100 and drops the remainder, which leaves the first two digits (43). <code>number % 100</code> is that remainder, which is the last two digits (78).',
-            task: 'Print <code>number // 100 + number % 100</code> to find the bus number.',
+            task: 'Type the three lines below at the bottom of your code, then press <kbd>▶ Run</kbd> to find the bus number.<br><br>These lines aren\'t part of the <code>if</code> or <code>else</code>, so they have no spaces in front.',
             tools: ['maths', 'int/str'],
             hints: [
-                'First make a number: <code>number = int(combination)</code>',
-                '<code>print(number // 100 + number % 100)</code>'
+                'The first line turns the text in <code>combination</code> into a number, and keeps it in <code>number</code>.',
+                'The second line adds the first two digits to the last two digits, and keeps the answer in <code>bus</code>. The third line shows it.'
             ],
-            try: ['number = int(combination)\nbus = number // 100 + number % 100\nprint("Bus number:", bus)'],
+            typeIt: 'number = int(combination)\nbus = number // 100 + number % 100\nprint("Bus number:", bus)',
             learn: '<code>// 100</code> chops off the last two digits and <code>% 100</code> keeps only the last two. That\'s a handy trick for pulling numbers apart!',
             clue: 'Now you know which bus the Magpie caught. Add it to the Evidence Board →',
             evidence: ['bus'],

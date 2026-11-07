@@ -46,7 +46,7 @@ It's a static site with no build step and no server code.
    - `run` (with `stdout`, `code`, `ok`)
 
    Use the helpers in `checks.js`, e.g. `done: e => uses(e, /len\s*\(/) && printed(e, '96')`.
-5. If a mission needs data that isn't in a file (e.g. a list to loop over), put it in `data: 'badges = [...]'`. The objective card always shows it as a click-to-add box. `try` is a worked answer, so it only shows on tutorial missions or after every hint has been used.
+5. If a mission needs data that isn't in a file (e.g. a list to loop over), put it in `data: 'badges = [...]'`. With `typeIt` (below) it's added to the student's code for them; without it, the objective card shows it as a click-to-add box.
 6. When a mission reveals a clue, give it `evidence: ['field-id']`, listing the evidence question(s) it answers.
    - When the student's code passes the mission, the objective card asks those questions.
    - The next objective unlocks once they're answered correctly.
@@ -54,7 +54,10 @@ It's a static site with no build step and no server code.
    - The final mission (`final: true`) asks for any main answers still missing.
 7. Every clickable snippet (`try`, `data`, bonus `code`) shows a numbered explanation of each line. `explain.js` covers simple lines (prints, variables, loops, if...). For anything else, add it to the case's `explain: { 'the exact line': 'what it does' }`. The checker fails if any snippet line has no explanation.
    - Use variable names that say what's inside (`scrap1`, not `part1`; `file`, not `f`).
-   - To make the student **type** the code rather than click it, give the mission `typeIt: 'code'`. It appears as grey ghost code in the editor for them to type over. Put a part they should change in `⟨…⟩`, e.g. `codename = "⟨Agent Sparrow⟩"`. If the mission also has `data`, that's added to their code for them first. Case 1 uses this throughout.
+   - Every mission makes the student **type** the code rather than click it: give it `typeIt: 'code'`. It appears as grey ghost code in the editor for them to type over. Put a part they should change in `⟨…⟩`, e.g. `codename = "⟨Agent Sparrow⟩"`. If the mission also has `data`, that's added to their code for them first.
+   - `typeIt` can't have blank lines, and should only hold the new lines for that mission. Code from earlier missions is still in the editor, so build on it rather than retyping it.
+   - In **easy** cases the code is shown straight away. In **medium** and **hard** cases it stays hidden until the student has used every hint, so they try writing it themselves first. Write those tasks as a goal ("print every DENIED line"), not "type the lines below", and make `done` check the result rather than the exact wording of the `typeIt` code.
+   - The ghost code doesn't mind spacing that Python doesn't mind (`x=1`, `print( x )`, any spacing inside quotes). It does flag spacing that would be a Python error: a missing space between words (`fornamein`), a space inside a name or a sign (`sig ned_in`, `/ /`), and spaces at the start of a line that Python would reject.
 8. Write a teacher solution in `tests/solutions/<same name>.py` and run the checker (below).
 
 ## Checking the cases
